@@ -41,6 +41,8 @@ def extract_the_things(args):
         if args.remove_missing:
             print('remove all values marked as "-3" and "-7"')
         if args.cov.corr:
+            import seaborn as sns
+            import matplotlib.pyplot as plt
             print('produce covariance/corr of variables')
 
 if __name__ == '__main__':
