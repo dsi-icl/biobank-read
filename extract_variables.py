@@ -50,8 +50,9 @@ if __name__ == '__main__':
     __builtin__.namehtml=args.html
     __builtin__.namecsv=args.csv
     ### import Biobankread package
-    import BiobankRead2.BiobankRead2 as UKBr
+    from BiobankRead2 import BiobankRead2 as UKBr
     UKBr = UKBr.BiobankRead()
+    print("BBr loaded successfully")
     try:
         extract_the_things(args)
     except Exception as e:
