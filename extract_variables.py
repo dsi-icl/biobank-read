@@ -6,7 +6,6 @@ Created on Fri Mar 23 16:12:24 2018
 """
 
 import argparse
-import __builtin__
 import pandas as pd
 import numpy as np
 import logging
@@ -14,11 +13,12 @@ import logging
 parser = argparse.ArgumentParser(description="\n BiobankRead Extract_Variable. Does what it says hehe")
 
 in_opts = parser.add_argument_group(title='Input Files', description="Input files. The --csv and --html option are required")
-in_opts.add_argument("--csv", metavar="{File1}", type=str,required=False, help='Specify the csv file associated with the UKB application.')
-in_opts.add_argument("--html", metavar="{File2}", type=str,required=False, help='Specify the html file associated with the UKB application.')
+in_opts.add_argument("--csv", metavar="{File1}", type=str,required=True, help='Specify the csv file associated with the UKB application.')
+in_opts.add_argument("--html", metavar="{File2}", type=str,required=True, help='Specify the html file associated with the UKB application.')
 
 
 out_opts = parser.add_argument_group(title="Output formatting", description="Set the output directory and common name of files.")
+out_opts.add_argument("--vars", nargs='+', type=str, help='Specify variables to extract', required=True)
 out_opts.add_argument("--out", metavar='PREFIX', type=str, help='Specify the name prefix to output files')
 
 
@@ -36,22 +36,48 @@ def extract_the_things(args):
         print(args.out)
         print(args.csv)
         print(args.html)
+        print(args.vars)
+        actual_vars = []
+        All=UKBr.Vars
+        for V in args.vars:
+            if type(V) is not str:
+                ValueError('Variables need to be strings')
+                return None
+            res = [x for x in All if V in x]
+            try:
+                actual_vars.append(res)
+            except:
+                for i in res:
+                    actual_vars.append(i)
+            else: 
+                ValueError('Variables names wrong')
+                return None
+        bo=False
         if args.baseline_only:
             print('baseline visit data only')
-        if args.remove_missing:
-            print('remove all values marked as "-3" and "-7"')
+            bo=True
         if args.cov.corr:
             import seaborn as sns
             import matplotlib.pyplot as plt
             print('produce covariance/corr of variables')
+        Df = UKBr.extract_many_vars(actual_vars,baseline_only=bo)
+        if args.remove_missing:
+            print('remove all values marked as "-3" and "-7"')
+        return Df
+    
+def remove_missing(Df):
+    ''' stuff '''
+    return df
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    __builtin__.namehtml=args.html
-    __builtin__.namecsv=args.csv
+    namehtml=args.html
+    namecsv=args.csv
     ### import Biobankread package
-    from BiobankRead2 import BiobankRead2 as UKBr
-    UKBr = UKBr.BiobankRead()
+   # sys.path.append('D:\new place\Postdoc\python\BiobankRead-Bash')
+    import biobankRead2.BiobankRead2 as UKBr
+   # imp.reload(UKBr)
+    UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv)
     print("BBr loaded successfully")
     try:
         extract_the_things(args)

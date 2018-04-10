@@ -259,6 +259,30 @@ class BiobankRead():
             
         return everything
         
+    def variable_type(self,var_names):
+        """Returns the type of variable for any variable name"""
+        allrows = self.soup.findAll('tr')
+        # Deal with special symbols in variable name
+        symbols = BiobankRead.special_char
+        varlist = list(variable)
+        newvar = []
+        for v in varlist:
+            if v in symbols:
+                newvar.extend(['\\', v])
+            else:
+                newvar.extend([v])
+        variable = ''.join(newvar)
+        userrows = [t for t in allrows if re.search(searchvar,str(t))]
+        userrows_str = str(userrows[0])
+        match1 = re.search('<span style=\"white-space: nowrap;\">(.*?)</span></td>',userrows_str)
+        if match1:
+            idx = match1.group(1)
+        else:
+            print 'warning - index for', variable, 'not found'
+            return None1
+        return idx
+        
+        
         
     def illness_codes_categories(self, data_coding=6):
         """Returns data coding convention from online page"""
