@@ -268,7 +268,7 @@ class BiobankRead():
         allrows = self.soup.findAll('tr')
         # Deal with special symbols in variable name
         symbols = BiobankRead.special_char
-        varlist = list(variable)
+        varlist = list(var_names)
         newvar = []
         for v in varlist:
             if v in symbols:
@@ -276,6 +276,7 @@ class BiobankRead():
             else:
                 newvar.extend([v])
         variable = ''.join(newvar)
+        searchvar = '>'+variable+'(.?)<'
         userrows = [t for t in allrows if re.search(searchvar,str(t))]
         userrows_str = str(userrows[0])
         match1 = re.search('<span style=\"white-space: nowrap;\">(.*?)</span></td>',userrows_str)
@@ -283,7 +284,7 @@ class BiobankRead():
             idx = match1.group(1)
         else:
             print 'warning - index for', variable, 'not found'
-            return None1
+            return None
         return idx
         
         
@@ -375,7 +376,7 @@ class BiobankRead():
         main_Df = pd.DataFrame(columns =['eid'])
         main_Df['eid'] = self.Eids_all['eid']
         for var in keywords:
-            
+            print(var)
             # Get variable
             DBP = self.extract_variable(variable=var, baseline_only=baseline_only)
             
@@ -557,35 +558,37 @@ class BiobankRead():
 #        new_df[key] = df[cols[1::]].mean(axis=1)
 #        return new_df
     
-#    def vars_by_visits(self, col_names=None, visit=0):
-#        '''
-#        vars_by_visits(col_names=None, visit=0)
-#        returns variables in col_names associated with specified visit
-#        e.g. bbclass.vars_by_visits(col_names=['4080-0.0', '4080-0.1', '4080-2.0'], visit=0)
-#        returns ['4080-0.0', '4080-0.1']
-#        '''
-#    ###### 21-03-2018 : 
-#            #### what does this do again?
-#        if col_names is None:
-#            print ' (vars_by_visits) supply variable names in col_names'
-#            return None
-#        # Convert single argument to list
-#        # This because len(string) > 1
-#        if isinstance(col_names, basestring):
-#            col_names = [col_names]
-#        V1 =[]
-#        for var in col_names:
-#            # \d match any decimal digit
-#            # . match any character
-#            # * match previous character 0 or more times
-#            # + matches one or more times
-#            # ? matches zero or one time
-#            # Matches things like 'something-X.Y or 'something-X_Y'
-#            # Where X == visit
-#            res = re.search('(.*?)-'+str(visit)+'.(\d+)', var)
-#            if not res is None:
-#                V1.append(res.group(0))
-#        return V1
+    def vars_by_visits(self, col_names=None, visit=0):
+        '''
+        vars_by_visits(col_names=None, visit=0)
+        returns variables in col_names associated with specified visit
+        e.g. bbclass.vars_by_visits(col_names=['4080-0.0', '4080-0.1', '4080-2.0'], visit=0)
+        returns ['4080-0.0', '4080-0.1']
+        '''
+    ###### 21-03-2018 : 
+            #### what does this do again?
+    ###### 11-04-2018
+            #### used by other functions that feed into extract_variables()
+        if col_names is None:
+            print ' (vars_by_visits) supply variable names in col_names'
+            return None
+        # Convert single argument to list
+        # This because len(string) > 1
+        if isinstance(col_names, basestring):
+            col_names = [col_names]
+        V1 =[]
+        for var in col_names:
+            # \d match any decimal digit
+            # . match any character
+            # * match previous character 0 or more times
+            # + matches one or more times
+            # ? matches zero or one time
+            # Matches things like 'something-X.Y or 'something-X_Y'
+            # Where X == visit
+            res = re.search('(.*?)-'+str(visit)+'.(\d+)', var)
+            if not res is None:
+                V1.append(res.group(0))
+        return V1
     
 
     def rename_columns(self, df=None,key=None,option_str=True):
