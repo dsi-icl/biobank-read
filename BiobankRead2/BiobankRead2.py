@@ -50,8 +50,10 @@ class BiobankRead():
     special_char = "~`!@#$%^&*()_-+={}[]:>;',</?*-+" 
     
     defloc = os.path.join('D:\\', 'Uk Biobank', 'Application ')
-    sub_link  = 'http://biobank.ctsu.ox.ac.uk/crystal/field.cgi?id='
-    code_link = 'http://biobank.ctsu.ox.ac.uk/crystal/coding.cgi?id='
+    
+    # No longer required - URL extracted directly from data-set
+    #sub_link  = 'http://biobank.ctsu.ox.ac.uk/crystal/field.cgi?id='
+    #code_link = 'http://biobank.ctsu.ox.ac.uk/crystal/coding.cgi?id='
 
     
     def __init__(self, html_file = None, csv_file = None):
@@ -240,7 +242,9 @@ class BiobankRead():
         ## Retrieve all associated columns with variables names 
         # Encoded anonymised participant ID
         key = ['eid']
-        for link in self.soup.find_all('a', href=BiobankRead.sub_link+idx):
+	# explicit href search deprecated
+        #for link in self.soup.find_all('a', href=BiobankRead.sub_link+idx):
+	for link in self.soup.find_all("a", href = re.compile("field.cgi\?id="+idx+"$")):
             tmp = str(link.contents[0].encode('utf-8'))
             key.append(tmp) 
         everything = pd.read_csv(self.csv_file, usecols=key, nrows=self.N)
@@ -288,7 +292,17 @@ class BiobankRead():
         """Returns data coding convention from online page"""
         
         ## Get dictionary of disease codes
-        link = BiobankRead.code_link+str(data_coding)
+        # Get generic coding link - new April 2018
+        linkstr = self.soup.find_all("a", href = re.compile("coding.cgi\?id="+str(data_coding)+"$"))
+        if len(linkstr) == 0:
+            return None
+	if not isinstance(linkstr, basestring):
+	    linkstr = linkstr[0]
+        link = linkstr['href']
+								            
+	# explicit link search deprecated
+        #link = BiobankRead.code_link+str(data_coding)
+
         response = urllib2.urlopen(link)
         html = response.read()
         soup = bs4.BeautifulSoup(html,'html.parser')
