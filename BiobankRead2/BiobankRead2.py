@@ -189,10 +189,10 @@ class BiobankRead():
         EIDs = pd.read_csv(filename, usecols=['eid'])
         return EIDs
     
-    def Get_ass_dates(self):
+    def Get_ass_dates(self, dropNaN=False):
         # data frame of EIDs
         var = 'Date of attending assessment centre'
-        Ds = self.extract_variable(var)
+        Ds = self.extract_variable(var, dropNaN=dropNaN)
         return Ds   
 
     def extract_variable(self, variable=None, baseline_only=False, dropNaN=False):
@@ -343,7 +343,7 @@ class BiobankRead():
                 if dropNaN:
                     # drop subjects with no reported illness
                     # Get a boolean series with True where all fields present
-                    tmp = ~DBP.isnull().any(axis=1)
+                    tmp =  ~DBP.isnull().any(axis=1)
                     DBP = DBP[tmp]
                     #don't think this original bit below works as intended
                     #tmp = list(DBP.columns.values)
