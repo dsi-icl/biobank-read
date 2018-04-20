@@ -432,6 +432,8 @@ class BiobankRead():
             print corrList
             return None
         df = self.extract_many_vars(varlist, dropNaN=dropNaN)
+        # Exclude eid column from correlation
+        df = df.drop(['eid'], axis=1)
         correlation = df.corr(method='pearson');
         return correlation, df
         
@@ -442,6 +444,8 @@ class BiobankRead():
         dropNaN = True/False = whether to ignore NaN entries
         '''
         df = self.extract_many_vars(varlist, dropNaN=dropNaN)
+        # Exclude eid column from covariance
+        df = df.drop(['eid'], axis=1)
         covariance = df.cov();
         return covariance, df
         
@@ -565,10 +569,10 @@ class BiobankRead():
         e.g. bbclass.vars_by_visits(col_names=['4080-0.0', '4080-0.1', '4080-2.0'], visit=0)
         returns ['4080-0.0', '4080-0.1']
         '''
-    ###### 21-03-2018 : 
-            #### what does this do again?
-    ###### 11-04-2018
-            #### used by other functions that feed into extract_variables()
+        ###### 21-03-2018 : 
+        #### what does this do again?
+        ###### 11-04-2018
+        #### used by other functions that feed into extract_variables()
         if col_names is None:
             print ' (vars_by_visits) supply variable names in col_names'
             return None
