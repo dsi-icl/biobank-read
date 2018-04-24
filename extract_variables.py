@@ -126,6 +126,10 @@ def extract_the_things(args):
             Df = average_visits(Df,args)
         return Df
 
+#def eid_to_app(df,args):
+#    num=args.appnum
+#    #### how to do this? ####
+#    return df
 
 def produce_plots(df,args):
     ''' stuff to make nice plots'''
@@ -156,6 +160,9 @@ args.vars=['Sex','Age','BMI']
 args.baseline_only=True
 args.remove_missing=False
 args.aver_visits=False
+args.remove_outliers=False
+args.html='D:\UkBiobank\Application 10035\\21204\ukb21204.html'
+args.csv='D:\UkBiobank\Application 10035\\21204\ukb21204.csv'
 #####
 
 if __name__ == '__main__':
@@ -164,11 +171,11 @@ if __name__ == '__main__':
     namecsv=args.csv
     ### import Biobankread package
    # sys.path.append('D:\new place\Postdoc\python\BiobankRead-Bash')
-    import biobankRead2.BiobankRead2 as UKBr
-   # imp.reload(UKBr)
-    UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv)
-    print("BBr loaded successfully")
     try:
+        import biobankRead2.BiobankRead2 as UKBr
+        UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv)
+        print("BBr loaded successfully")
+        #
         Df=extract_the_things(args)
         final_name = args.out+'.csv'
         Df.to_csv(final_name,sep=',',index=None)
