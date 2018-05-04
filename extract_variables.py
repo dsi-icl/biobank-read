@@ -9,6 +9,7 @@ import argparse
 import pandas as pd
 import numpy as np
 import warnings
+import re
 
 parser = argparse.ArgumentParser(description="\n BiobankRead Extract_Variable. Does what it says hehe")
 
@@ -25,13 +26,20 @@ out_opts.add_argument("--out", metavar='PREFIX', type=str, help='Specify the nam
 options = parser.add_argument_group(title="Optional input", description="Apply some level of selection on the data")
 options.add_argument("--baseline_only",default=False,type=bool,help="Only keep data from baseline assessment centre")
 options.add_argument("--remove_missing",default=False, nargs='+', type=str,help="Remove subjects with values nan, -3 or -7 for any variable. Can specify which variables to perform that for")
-options.add_argument("--remove_outliers",default=None, nargs='+', type=str,action='store',help="Remove subjects with values beyond x std dev for any cont. variable. Format:[std.dev,one-sided,vars names...]")
+options.add_argument("--remove_outliers",default=False, nargs='+', type=str,action='store',help="Remove subjects with values beyond x std dev for any cont. variable. Format:[std.dev,one-sided,vars names...]")
+options.add_argument("--filter",default=False, nargs='+', type=str,action='store',help="Filter some variables based on conditions. Keep your requests simple ")
 
 sums = parser.add_argument_group(title="Optional request for basic summary", description="Perform mean /cov/ corr/ dist plots for the data")
 sums.add_argument("--aver_visits",default=False,type=bool,help="get average measurement per visit")
 sums.add_argument("--cov_corr",default=False,type=bool,help="Produce extra file of cov/corr between variables. Will have same location and similar name to main output file")
 
 ########################################################
+
+def whitespace_search(smth,lst):
+    smth = re.findall(r"[\w']+", smth)
+    res = [c for c in lst if all(v in c for v in smth)]
+    return res
+
 
 def actual_vars(smth):
     '''to use with :
@@ -43,13 +51,18 @@ def actual_vars(smth):
         '''
     actual_vars = []
     All=UKBr.Vars
-    #print(len(smth))
+    # turn strings to list
+    if type(smth) is str:
+        smth = [smth]
     for V in smth:
         #print(V)
         if type(V) is not str:
             ValueError('Variables need to be strings')
             return None
-        res = [x for x in All if V in x]
+        if ' ' in V:
+            res = whitespace_search(V,All)
+        else:
+            res = [x for x in All if V in x]
         for i in res:
             #print(i)
             actual_vars.append(i)
@@ -130,9 +143,30 @@ def outliers(Df,args):
     for Y in stuff:
         cols = [x for x in Df.columns.tolist() if Y in x]
         cols = ['eid']+cols ### this first
-        df_sub = UKBr.remove_outliers(df=Df,cols=cols,lim=std,one_sided=onesided)
-        Df2= pd.merge(Df2,df_sub,on='eid')
+        #df_sub = UKBr.remove_outliers(df=Df,cols=cols,lim=std,one_sided=onesided)
+        Df2=UKBr.remove_outliers(df=Df,cols=cols,lim=std,one_sided=onesided) #pd.merge(Df2,df_sub,on='eid')
     return Df2
+
+def filter_vars(df,args):
+    df_sub=pd.DataFrame(columns={'Vars','conds'})
+    for cond in  args.filter:
+        match=re.search('([a-zA-Z0-9\s]+)(\S{1,2}\d+)',cond)
+        thevar=match.group(1)
+        condition=match.group(2)
+        df_sub=df_sub.append({'Vars':thevar,'conds':condition},ignore_index=True)
+    # sanity check #
+    overlap=list(set(df_sub['Vars'])&set(args.vars))
+    if len(overlap)==0:
+        raise NameError('Conditional filtering does not match extracted variables')
+    #
+    df_sub=df_sub[[x in overlap for x in df_sub['Vars']]]
+    for i in range(len(df_sub)):
+        Ys = [x for x in df.columns.tolist() if df_sub['Vars'].loc[i] in x]
+        if len(Ys)==0:
+            Ys = whitespace_search(df_sub['Vars'].loc[i],df.columns.tolist())
+        for y in Ys:
+            df = df[eval('df["'+str(y)+'"]'+df_sub["conds"].loc[i])]
+    return df
 
 def extract_the_things(args):
         print(args.out)
@@ -154,6 +188,9 @@ def extract_the_things(args):
         if args.aver_visits:
             print('Compute visit mean for cont variables')
             Df = average_visits(Df,args)
+        if args.filter:
+            print('Filter variables based on condition')
+            Df = filter_vars(Df,args)
         return Df
 
 #def eid_to_app(df,args):
@@ -216,14 +253,15 @@ class Object(object):
     pass
 args = Object()
 args.out='test1'
-args.vars=['Sex','Age','BMI']#['Pulse rate']#
-args.baseline_only=True
-args.remove_missing=False
+args.vars=['Sex','Age assessment','BMI']#['Pulse rate']#
+args.baseline_only=False
+args.remove_missing=True
 args.aver_visits=False
-args.remove_outliers=False
+args.remove_outliers=True
+args.filter=['Age assessment<70','Age assessment>=40','BMI>=25']#False#
 args.html='D:\UkBiobank\Application 10035\\21204\ukb21204.html'
 args.csv='D:\UkBiobank\Application 10035\\21204\ukb21204.csv'
-args.cov_corr=True
+args.cov_corr=False
 #####
 
 if __name__ == '__main__':
