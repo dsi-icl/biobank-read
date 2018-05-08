@@ -55,7 +55,6 @@ def actual_vars(smth):
     if type(smth) is str:
         smth = [smth]
     for V in smth:
-        #print(V)
         if type(V) is not str:
             ValueError('Variables need to be strings')
             return None
@@ -64,7 +63,6 @@ def actual_vars(smth):
         else:
             res = [x for x in All if V in x]
         for i in res:
-            #print(i)
             actual_vars.append(i)
         if len(actual_vars)==0: 
             ValueError('Variables names wrong. Go back to app documents and double-check what you actually have')
@@ -143,8 +141,7 @@ def outliers(Df,args):
     for Y in stuff:
         cols = [x for x in Df.columns.tolist() if Y in x]
         cols = ['eid']+cols ### this first
-        #df_sub = UKBr.remove_outliers(df=Df,cols=cols,lim=std,one_sided=onesided)
-        Df2=UKBr.remove_outliers(df=Df,cols=cols,lim=std,one_sided=onesided) #pd.merge(Df2,df_sub,on='eid')
+        Df2=UKBr.remove_outliers(df=Df,cols=cols,lim=std,one_sided=onesided) 
     return Df2
 
 def filter_vars(df,args):
@@ -229,39 +226,23 @@ def produce_plots(df,args):
     sns_plot=sns.clustermap(Corr, center=0, cmap="vlag",
                row_colors=network_colors, col_colors=network_colors,
                linewidths=.75, figsize=(13, 13))
-    #fig = sns_plot.get_figure()
-    #fig.savefig(args.out+'_corrPlot.png')
     sns_plot.savefig(args.out+'_corrPlot.png')
-#    #### Dist plot
-    ############ A lot of effort and a bit pointless
-#    sns.set(style="white", rc={"axes.facecolor": (0, 0, 0, 0)})
-#    df3=df2[colss].dropna()
-#    X = len(df3.columns)
-#    f, axes = plt.subplots(1, X, figsize=(15, 7), sharex=False)
-#    pal = sns.husl_palette(X, s=.45)#sns.cubehelix_palette(X, rot=-.25, light=.7)
-#    for i in range(X):
-#        data = df3[df3.columns[i]].dropna()
-#        ax=axes[i]
-#        sns.distplot(data, color=pal[i],ax=ax)
-#        #ax.set_xticklabels(ax.get_xticklabels(), rotation = 0)
-#    plt.setp(axes, yticks=[])
-#    f.savefig(args.out+'_distPlot.png')
     return 
 
 ###### for testing on desktop ONLY!! #####
-class Object(object):
-    pass
-args = Object()
-args.out='test1'
-args.vars=['Sex','Age assessment','BMI']#['Pulse rate']#
-args.baseline_only=False
-args.remove_missing=True
-args.aver_visits=False
-args.remove_outliers=True
-args.filter=['Age assessment<70','Age assessment>=40','BMI>=25']#False#
-args.html='D:\UkBiobank\Application 10035\\21204\ukb21204.html'
-args.csv='D:\UkBiobank\Application 10035\\21204\ukb21204.csv'
-args.cov_corr=False
+#class Object(object):
+#    pass
+#args = Object()
+#args.out='test1'
+#args.vars=['Sex','Age assessment','BMI']#['Pulse rate']#
+#args.baseline_only=False
+#args.remove_missing=True
+#args.aver_visits=False
+#args.remove_outliers=True
+#args.filter=['Age assessment<70','Age assessment>=40','BMI>=25']#False#
+#args.html='D:\UkBiobank\Application 10035\\21204\ukb21204.html'
+#args.csv='D:\UkBiobank\Application 10035\\21204\ukb21204.csv'
+#args.cov_corr=False
 #####
 
 if __name__ == '__main__':

@@ -459,7 +459,7 @@ class BiobankRead():
         dropNaN = True/False = whether to ignore NaN entries
         only relevant if multiple measurements available
         NOTE: Bill Crum changed '_' date delimiter to '-'
-        NOTE (27/04): Deb S-L changed '-' to regex expression to extract '-' or '_'
+        NOTE (27/04): Deb S-L changed '-' to regex expression to extract '-' OR '_'
         '''
         
         # e.g.  Tmp = ['eid', '4080-0.0', '4080-0.1', '4080-1.0', '4080-1.1', '4080-2.0', '4080-2.1']
