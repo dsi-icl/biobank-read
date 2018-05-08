@@ -11,6 +11,20 @@ import numpy as np
 import warnings
 import re
 
+'''Example run:
+    python extract_variables.py \
+        --csv x/y/z.csv \
+        --html x/y/z.html \
+        --vars <list of variables>, as is or in .txt file \
+        --out <directory name> x1\y1 \
+(optionally)
+        --baseline_only True\False \
+        --remove_missing True\False \
+        --filter <list of conditions on variables in vars>, as is or in .txt file \
+        --aver_visits True\False \
+        --cov_corr True\False \
+'''
+
 parser = argparse.ArgumentParser(description="\n BiobankRead Extract_Variable. Does what it says hehe")
 
 in_opts = parser.add_argument_group(title='Input Files', description="Input files. The --csv and --html option are required")
@@ -24,7 +38,7 @@ out_opts.add_argument("--out", metavar='PREFIX', type=str, help='Specify the nam
 
 
 options = parser.add_argument_group(title="Optional input", description="Apply some level of selection on the data")
-options.add_argument("--baseline_only",default=False,type=bool,help="Only keep data from baseline assessment centre")
+options.add_argument("--baseline_only",default=True,type=bool,help="Only keep data from baseline assessment centre")
 options.add_argument("--remove_missing",default=False, nargs='+', type=str,help="Remove subjects with values nan, -3 or -7 for any variable. Can specify which variables to perform that for")
 options.add_argument("--remove_outliers",default=False, nargs='+', type=str,action='store',help="Remove subjects with values beyond x std dev for any cont. variable. Format:[std.dev,one-sided,vars names...]")
 options.add_argument("--filter",default=False, nargs='+', type=str,action='store',help="Filter some variables based on conditions. Keep your requests simple ")
@@ -39,6 +53,29 @@ def whitespace_search(smth,lst):
     smth = re.findall(r"[\w']+", smth)
     res = [c for c in lst if all(v in c for v in smth)]
     return res
+
+def is_doc(doc):
+    b=doc.find('.txt')
+    return (b>-1)
+    
+
+def read_basic_doc(doc):
+    try:
+        with open(doc) as f:
+            variable=f.read()
+    except:
+        raise IOError('Input file is not a .txt file')
+    commas=re.findall(',',variable)
+    commas = 1*(len(commas)>0)
+    spaces=re.findall('\n',variable)
+    spaces = 1*(len(spaces)>0)
+    if commas:
+        lst=variable.split(',')
+    elif spaces:
+        lst=variable.split('\n')
+    else:
+        raise IOError('Input file formatted wrong, needs to be comma OR new-line-break separated')
+    return lst
 
 
 def actual_vars(smth):
@@ -166,10 +203,8 @@ def filter_vars(df,args):
     return df
 
 def extract_the_things(args):
-        print(args.out)
-#        print(args.csv)
-#        print(args.html)
-        print(args.vars)
+        if is_doc(args.vars):
+            args.vars=read_basic_doc(args.vars)
         bo=False
         if args.baseline_only:
             print('Baseline visit data only')
@@ -187,6 +222,8 @@ def extract_the_things(args):
             Df = average_visits(Df,args)
         if args.filter:
             print('Filter variables based on condition')
+            if is_doc(args.filter):
+                args.filter=read_basic_doc(args.filter)
             Df = filter_vars(Df,args)
         return Df
 
