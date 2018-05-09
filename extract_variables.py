@@ -54,29 +54,6 @@ def whitespace_search(smth,lst):
     res = [c for c in lst if all(v in c for v in smth)]
     return res
 
-def is_doc(doc):
-    b=doc.find('.txt')
-    return (b>-1)
-    
-
-def read_basic_doc(doc):
-    try:
-        with open(doc) as f:
-            variable=f.read()
-    except:
-        raise IOError('Input file is not a .txt file')
-    commas=re.findall(',',variable)
-    commas = 1*(len(commas)>0)
-    spaces=re.findall('\n',variable)
-    spaces = 1*(len(spaces)>0)
-    if commas:
-        lst=variable.split(',')
-    elif spaces:
-        lst=variable.split('\n')
-    else:
-        raise IOError('Input file formatted wrong, needs to be comma OR new-line-break separated')
-    return lst
-
 
 def actual_vars(smth):
     '''to use with :
@@ -203,8 +180,8 @@ def filter_vars(df,args):
     return df
 
 def extract_the_things(args):
-        if is_doc(args.vars):
-            args.vars=read_basic_doc(args.vars)
+        if UKBr.is_doc(args.vars):
+            args.vars=UKBr.read_basic_doc(args.vars)
         bo=False
         if args.baseline_only:
             print('Baseline visit data only')
@@ -222,8 +199,8 @@ def extract_the_things(args):
             Df = average_visits(Df,args)
         if args.filter:
             print('Filter variables based on condition')
-            if is_doc(args.filter):
-                args.filter=read_basic_doc(args.filter)
+            if UKBr.is_doc(args.filter):
+                args.filter=UKBr.read_basic_doc(args.filter)
             Df = filter_vars(Df,args)
         return Df
 

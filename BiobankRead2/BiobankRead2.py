@@ -146,7 +146,30 @@ class BiobankRead():
         soup = bs4.BeautifulSoup(f, 'html.parser')
         return soup
         
-
+    def is_doc(doc):
+        b=doc.find('.txt')
+        return (b>-1)
+    
+    def read_basic_doc(doc):
+        try:
+            with open(doc) as f:
+                variable=f.read()
+        except:
+            raise IOError('Input file is not a .txt file')
+        commas=re.findall(',',variable)
+        commas = 1*(len(commas)>0)
+        spaces=re.findall('\n',variable)
+        spaces = 1*(len(spaces)>0)
+        if commas:
+            lst=variable.split(',')
+        elif spaces:
+            lst=variable.split('\n')
+        else:
+            raise IOError('Input file formatted wrong, needs to be comma OR new-line-break separated')
+        return lst
+    
+    #############################################################
+    
     def All_variables(self):
         """Read all variable names in the table and return"""
         allrows = self.soup.findAll('tr')
