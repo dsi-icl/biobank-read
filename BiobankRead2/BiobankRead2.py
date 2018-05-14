@@ -11,7 +11,7 @@ Edited 01/06/2017
 import pandas as pd
 import bs4 #beautifulsoup4 package
 import re # RegEx 
-import urllib2
+import urllib3 as urllib2
 import numpy as np
 import os
 import os.path
@@ -60,37 +60,37 @@ class BiobankRead():
         
         if (html_file == None) or (csv_file == None):
             print
-            print ' CLASS NOT INITIALISED'
-            print
-            print ' To initialise this class, please use'
-            print ' bbclass(html_file = namehtml, csv_file = namecsv)'
-            print 
-            print " namehtml='<file_location>.html'"
-            print " namecsv='<file_location>.csv'"
-            print ' where'
-            print ' ukb<release_code>.csv = the main data file'
-            print '                         produced from the .enc file'
-            print ' something.html = information file, generated'
-            print '                  alongside the.csv file'
-            print
+            print(' CLASS NOT INITIALISED')
+            print()
+            print(' To initialise this class, please use')
+            print(' bbclass(html_file = namehtml, csv_file = namecsv)')
+            print()
+            print(" namehtml='<file_location>.html'")
+            print(" namecsv='<file_location>.csv'")
+            print(' where')
+            print(' ukb<release_code>.csv = the main data file')
+            print('                         produced from the .enc file')
+            print(' something.html = information file, generated')
+            print('                  alongside the.csv file')
+            print()
             self.OK = False
             return
 
         if not os.path.isfile(html_file):
             print
-            print ' INITIALISATION ERROR: html_file =', html_file, 'not found'
+            print(' INITIALISATION ERROR: html_file =', html_file, 'not found')
             print
             self.OK = False
             return 
             
         if not os.path.isfile(csv_file):
             print
-            print ' INITIALISATION ERROR: csv_file =', csv_file, 'not found'
+            print(' INITIALISATION ERROR: csv_file =', csv_file, 'not found')
             print
             self.OK = False
             return None
 
-        print ' OK, initialising class now ... '
+        print(' OK, initialising class now ... ')
                     
         # Construct the path to the html file
         self.html_file = html_file#self.files_path()
@@ -125,19 +125,19 @@ class BiobankRead():
         if self.Eids_all is not None:
             self.OK = True
         if not self.OK:
-            print 'error - failed to get Eids'
+            print('error - failed to get Eids')
             self.OK = False
             return
         self.N = len(self.Eids_all)
-        print ' Found', self.N, 'EIDS'
+        print(' Found', self.N, 'EIDS')
         
         # All attendance dates
         # QUERY - WHERE IS N SET?
         #self.assess_dates = self.Get_ass_dates()
         
     def status(self):
-        print 'html:', self.html_file
-        print 'Record number', self.N
+        print('html:', self.html_file)
+        print('Record number', self.N)
         return
 
     def makeSoup(self):
@@ -147,8 +147,11 @@ class BiobankRead():
         return soup
         
     def is_doc(doc):
-        b=doc.find('.txt')
-        return (b>-1)
+        if type(doc) is list:
+            return False
+        else:
+            b=doc.find('.txt')
+            return (b>-1)
     
     def read_basic_doc(doc):
         try:
@@ -249,8 +252,8 @@ class BiobankRead():
         if not userrows:
             raise Exception('The input variable is not in the files')
         if len(userrows) > 1:
-            print 'warning - more than one variable row found'
-            print 'warning - returning first instance only'
+            print('warning - more than one variable row found')
+            print('warning - returning first instance only')
         userrows_str = str(userrows[0])
 
         # extract IDs related to variables
@@ -259,7 +262,7 @@ class BiobankRead():
         if match1:
             idx = match1.group(1)
         else:
-            print 'warning - index for', variable, 'not found'
+            print('warning - index for', variable, 'not found')
             return None
             
         ## Retrieve all associated columns with variables names 
@@ -267,7 +270,7 @@ class BiobankRead():
         key = ['eid']
 	# explicit href search deprecated
         #for link in self.soup.find_all('a', href=BiobankRead.sub_link+idx):
-	for link in self.soup.find_all("a", href = re.compile("field.cgi\?id="+idx+"$")):
+        for link in self.soup.find_all("a", href = re.compile("field.cgi\?id="+idx+"$")):
             tmp = str(link.contents[0].encode('utf-8'))
             key.append(tmp) 
         everything = pd.read_csv(self.csv_file, usecols=key, nrows=self.N)
@@ -306,7 +309,7 @@ class BiobankRead():
         if match1:
             idx = match1.group(1)
         else:
-            print 'warning - index for', variable, 'not found'
+            print('warning - index for', variable, 'not found')
             return None
         return idx
         
@@ -320,9 +323,9 @@ class BiobankRead():
         linkstr = self.soup.find_all("a", href = re.compile("coding.cgi\?id="+str(data_coding)+"$"))
         if len(linkstr) == 0:
             return None
-	if not isinstance(linkstr, basestring):
-	    linkstr = linkstr[0]
-        link = linkstr['href']
+        if not isinstance(linkstr, basestring):
+            linkstr = linkstr[0]
+            link = linkstr['href']
 								            
 	# explicit link search deprecated
         #link = BiobankRead.code_link+str(data_coding)
@@ -356,7 +359,7 @@ class BiobankRead():
         '''
         
         if keyword is None:
-            print ' (all_related_vars) supply keyword to search over'
+            print(' (all_related_vars) supply keyword to search over')
             return None
             
         stuff = [t for t in self.Vars if keyword in t]
@@ -374,7 +377,7 @@ class BiobankRead():
                     #DBP = DBP[np.isfinite(DBP[tmp[1]])]    
                 stuff_var[var] = DBP
         else:
-            print 'No match for', keyword, 'found'
+            print('No match for', keyword, 'found')
         return stuff_var, stuff
 
 
@@ -388,7 +391,7 @@ class BiobankRead():
         spaces = drop variable name after first space when labelling columns
         '''
         if keywords is None:
-            print ' (extract_many_vars) supply [keywords] to search over'
+            print(' (extract_many_vars) supply [keywords] to search over')
             return None
             
         # Convert single argument to list
@@ -431,14 +434,14 @@ class BiobankRead():
         Save a supplied data-frame as a csv file
         '''
         if df is None:
-            print ' supply a data-frame'
+            print(' supply a data-frame')
             return
         if csvfile is None:
-            print ' supply filename.csv'
+            print(' supply filename.csv')
             return
         if os.path.isfile(csvfile) and not force:
-            print ' %s exists and won\'t be overwritten' % csvfile
-            print 'use force=True to override'
+            print(' %s exists and won\'t be overwritten' % csvfile)
+            print('use force=True to override')
             return
         df.to_csv(csvfile,index=None)
         
@@ -451,8 +454,8 @@ class BiobankRead():
         '''
         corrList = ['pearson','kendall', 'spearman']
         if cortype not in corrList:
-            print 'argument cortype must be one of:'
-            print corrList
+            print('argument cortype must be one of:')
+            print(corrList)
             return None
         df = self.extract_many_vars(varlist, dropNaN=dropNaN)
         # Exclude eid column from correlation
@@ -602,7 +605,7 @@ class BiobankRead():
         ###### 11-04-2018
         #### used by other functions that feed into extract_variables()
         if col_names is None:
-            print ' (vars_by_visits) supply variable names in col_names'
+            print(' (vars_by_visits) supply variable names in col_names')
             return None
         # Convert single argument to list
         # This because len(string) > 1
@@ -681,7 +684,7 @@ class BiobankRead():
         row_str = str(userrows[0])
         foo = row_str.find('Uses data-coding')
         if foo < 0:
-            print 'No data coding associated with this variable'
+            print('No data coding associated with this variable')
             return None
         test = re.search('coding <a href=\"(.?)*\">',row_str)
         res = test.group(0)
@@ -706,11 +709,11 @@ class BiobankRead():
     def re_wildcard(self, strs=None):
         # inserts a regex wildcard between two keywords
         if not type(strs) is list:
-            print 'Input not a list'
+            print('Input not a list')
             return None
         n = len(strs)
         if n < 2:
-            print 'Not enough words to collate'
+            print('Not enough words to collate')
             return None
         res = strs[0]
         for word in strs[1::]:
@@ -815,7 +818,7 @@ class BiobankRead():
         cols = cols[1::]
         whichdict = {'ICD10' : 'diag_icd10', 'OPCS' : 'oper4', 'ICD9' : 'diag_icd9'}
         if which not in whichdict:
-            print ' (HES_code_match) unrecognised diagnosis code'
+            print(' (HES_code_match) unrecognised diagnosis code')
             return None
         icd = whichdict[which]
         new_df = pd.DataFrame(columns=cols)

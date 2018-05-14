@@ -29,6 +29,8 @@ out_opts.add_argument("--codes", nargs='+', type=str, help='Specify disease code
 options = parser.add_argument_group(title="Optional input", description="Apply some level of selection on the data")
 options.add_argument("--dateType",default='epistart',type=str,help="epistart or admidate")
 options.add_argument("--firstvisit",default=False,type=bool,help="Only keep earliest visit for each subjects")
+options.add_argument("--baseline",default=False,type=bool,nargs='+',help="Keep visits before or after baseline assessment only")
+
 
 
 
@@ -41,14 +43,34 @@ def getcodes(args):
     return Codes
 
 def extract_disease_codes(Df,args):
-    HFs=getcodes(args.codes)
+    HFs=getcodes(args)
     df = UKBr.HES_code_match(df=Df, icds=HFs, which=args.codeType)
     if args.fistvisit:
         print('Keeping 1st visits only')
         date = args.dateType
         df = UKBr.HES_first_time(df,date)
+    if args.baseline:
+        print('Keeping visits before or after baseline assessment only')
+        df_sub=UKBr.HES_first_time(df)
+        df_ass=UKBr.Get_ass_dates()
+        if args.baseline in ['after','After']:
+            df=UKBr.HES_after_assess(df=df_sub,assess_date=df_ass)
+        else:
+            df=UKBr.HES_before_assess(dates=df_sub)
     return df
 
+###################
+class Object(object):
+   pass
+args = Object()
+args.out='test1'
+args.html=r'D:\UkBiobank\Application 10035\\21204\ukb21204.html'
+args.csv=r'D:\UkBiobank\Application 10035\\21204\ukb21204.csv'
+args.tsv=r'D:\UkBiobank\Application 10035\HES\ukb.tsv'
+args.codes=['I110','I132','I500','I501','I509']
+args.dateType='epistart'
+args.firstvisit=False
+args.baseline=False
 ###################
 
 if __name__ == '__main__':
