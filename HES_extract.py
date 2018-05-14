@@ -44,19 +44,25 @@ def getcodes(args):
 
 def extract_disease_codes(Df,args):
     HFs=getcodes(args)
-    df = UKBr.HES_code_match(df=Df, icds=HFs, which=args.codeType)
-    if args.fistvisit:
+    ## get all associated codes ##
+    Codes = UKBr.find_ICD10_codes(select=HFs)
+    df = UKBr.HES_code_match(df=Df, icds=Codes, which=args.codeType)
+    if args.firstvisit:
         print('Keeping 1st visits only')
         date = args.dateType
-        df = UKBr.HES_first_time(df,date)
+        df_1st = UKBr.HES_first_time(df,date)
     if args.baseline:
         print('Keeping visits before or after baseline assessment only')
-        df_sub=UKBr.HES_first_time(df)
+        df_sub=UKBr.HES_first_time(df,date)
         df_ass=UKBr.Get_ass_dates()
         if args.baseline in ['after','After']:
-            df=UKBr.HES_after_assess(df=df_sub,assess_date=df_ass)
+            df2=UKBr.HES_after_assess(df=df_sub,assess_date=df_ass)
         else:
-            df=UKBr.HES_before_assess(dates=df_sub)
+            df2=UKBr.HES_before_assess(dates=df_sub)
+    return df
+
+def post_process(df):
+    ''' things will happen here '''
     return df
 
 ###################
@@ -68,8 +74,9 @@ args.html=r'D:\UkBiobank\Application 10035\\21204\ukb21204.html'
 args.csv=r'D:\UkBiobank\Application 10035\\21204\ukb21204.csv'
 args.tsv=r'D:\UkBiobank\Application 10035\HES\ukb.tsv'
 args.codes=['I110','I132','I500','I501','I509']
+args.codeType='ICD10'
 args.dateType='epistart'
-args.firstvisit=False
+args.firstvisit=True
 args.baseline=False
 ###################
 

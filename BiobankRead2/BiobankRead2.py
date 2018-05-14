@@ -98,7 +98,7 @@ class BiobankRead():
 
         #HES file processing variables
         this_dir, this_filename = os.path.split(__file__)
-        self.DATA_PATH   = os.path.join(this_dir, "data", "ICD10_UKB.tsv")
+        self.DATA_PATH   = os.path.join(this_dir, "data", "coding19.tsv")
         self.DATA_PATH_2 = os.path.join(this_dir, "data", "ICD9_codes.csv")        
         
         # Parse html 
@@ -146,14 +146,14 @@ class BiobankRead():
         soup = bs4.BeautifulSoup(f, 'html.parser')
         return soup
         
-    def is_doc(doc):
+    def is_doc(self,doc):
         if type(doc) is list:
             return False
         else:
             b=doc.find('.txt')
             return (b>-1)
     
-    def read_basic_doc(doc):
+    def read_basic_doc(self,doc):
         try:
             with open(doc) as f:
                 variable=f.read()
@@ -218,7 +218,8 @@ class BiobankRead():
     def Get_ass_dates(self, dropNaN=False):
         # data frame of EIDs
         var = 'Date of attending assessment centre'
-        Ds = self.extract_variable(var, dropNaN=dropNaN)
+        Ds = self.extract_variable(var)#
+        Ds = self.rename_columns(Ds, [var])
         return Ds   
 
     def extract_variable(self, variable=None, baseline_only=False, dropNaN=False):
@@ -271,7 +272,7 @@ class BiobankRead():
 	# explicit href search deprecated
         #for link in self.soup.find_all('a', href=BiobankRead.sub_link+idx):
         for link in self.soup.find_all("a", href = re.compile("field.cgi\?id="+idx+"$")):
-            tmp = str(link.contents[0].encode('utf-8'))
+            tmp = str(link.contents[0])#.encode('utf-8'))
             key.append(tmp) 
         everything = pd.read_csv(self.csv_file, usecols=key, nrows=self.N)
         
@@ -775,11 +776,12 @@ class BiobankRead():
         ## input: select - general code for one class of deseases
         ## output: icd10 - codes of all deseases associated with class
         tmp = self.HES_tsv_read(self.DATA_PATH)
-        codes_all = tmp['coding']
+        codes_all = tmp['coding'].tolist()
         icd10 = []
+        if type(select) is str:
+            select = [select]
         for categ in select:
-            Ns = [categ in x for x in codes_all]
-            tmp = codes_all[Ns]
+            tmp = [x for x in codes_all if categ in x]
             for y in tmp:
                 icd10.append(y)
         icd10 = [x for x in icd10 if 'Block' not in x]
@@ -805,15 +807,14 @@ class BiobankRead():
         ### t=['I2','I7','I6','G4']
         ### codes_icd10 = find_ICD10_codes(t)
          
-    def HES_code_match(self,df=None,cols=None,icds=None,which='ICD10'):
+    def HES_code_match(self,df=None,icds=None,which='ICD10'):
         # find input ICDs & OPCS codes in specified columns from input HES data frame
         # USe only on'HES' extrated directly from HES.tsv file
         # which: 'diagnosis', 'oper4' or 'diag_icd9'
         if type(icds) is pd.core.series.Series:
             icds = icds.tolist()
             icds = [x for x in icds if str(x) != 'nan']
-        if cols is None:
-            cols = df.columns.tolist()
+        cols = df.columns.tolist()
         # remove eids
         cols = cols[1::]
         whichdict = {'ICD10' : 'diag_icd10', 'OPCS' : 'oper4', 'ICD9' : 'diag_icd9'}
@@ -879,7 +880,7 @@ class BiobankRead():
         new_df2['eid'] = df['eid']
         return new_df2
       
-    def HES_first_time(self,df=None):
+    def HES_first_time(self,df=None,date='epistart'):
         # finds the earliest admission date in HES data for each subject
         #   df should be HES file dataframe outout from "HES_code_match"
         eids_unique = df['eid'].tolist()
@@ -892,7 +893,7 @@ class BiobankRead():
             tmp =  df[df['eid']==ee]
             res.append(len(tmp))
             #tmp['admidate'] = pd.to_datetime(tmp['admidate'])
-            x = tmp['admidate'].replace(np.nan,self.end_follow_up).min()
+            x = tmp[date].replace(np.nan,self.end_follow_up).min()
             df2=pd.DataFrame([[ee,x]],columns=['eid','first_admidate'])
             new_Df=new_Df.append(df2)#,ignore_index=True)
         return new_Df
