@@ -928,7 +928,7 @@ class BiobankRead():
         DF['eid'] = dates['eid']
         assess_date = dates['assess_date'].tolist()
         res=[a>b for (a,b) in zip(assess_date,dates['first_admidate'].tolist())]
-        res = 1*(res>0)
+        res = [1*(x>0) for x in res]
         DF['Before'] = res
         return DF
     
