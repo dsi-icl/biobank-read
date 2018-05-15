@@ -28,8 +28,8 @@ out_opts.add_argument("--codes", nargs='+', type=str, help='Specify disease code
 
 options = parser.add_argument_group(title="Optional input", description="Apply some level of selection on the data")
 options.add_argument("--dateType",default='epistart',type=str,help="epistart or admidate")
-options.add_argument("--firstvisit",default=False,type=bool,help="Only keep earliest visit for each subjects")
-options.add_argument("--baseline",default=False,type=bool,nargs='+',help="Keep visits before or after baseline assessment only")
+options.add_argument("--firstvisit",default=True,type=bool,help="Only keep earliest visit for each subjects")
+options.add_argument("--baseline",default=True,type=bool,nargs='+',help="Keep visits before or after baseline assessment only")
 
 
 
@@ -47,23 +47,41 @@ def extract_disease_codes(Df,args):
     ## get all associated codes ##
     Codes = UKBr.find_ICD10_codes(select=HFs)
     df = UKBr.HES_code_match(df=Df, icds=Codes, which=args.codeType)
+    df_new = count_codes(df,args)
     if args.firstvisit:
-        print('Keeping 1st visits only')
+        print('Marking 1st ever and latest visits')
         date = args.dateType
-        df_1st = UKBr.HES_first_time(df,date)
+        df_1st = UKBr.HES_first_last_time(df,date)
+        df_new = pd.merge(df_new,df_1st,on=['eid'],how='outer')
     if args.baseline:
-        print('Keeping visits before or after baseline assessment only')
-        df_sub=UKBr.HES_first_time(df,date)
+        print('Marking visits before & after baseline assessment')
         df_ass=UKBr.Get_ass_dates()
-        if args.baseline in ['after','After']:
-            df2=UKBr.HES_after_assess(df=df_sub,assess_date=df_ass)
-        else:
-            df2=UKBr.HES_before_assess(dates=df_sub)
-    return df
+        df_ass=df_ass[df_ass.columns[0:2]]
+        df_ass.rename(columns={df_ass.columns[1]: 'assess_date'},inplace=True)
+        df2=UKBr.HES_after_assess(df=df,assess_dates=df_ass,date=date)
+        df_sub=UKBr.HES_first_last_time(df,date)
+        df_sub=pd.merge(df_sub,df_ass,on='eid')
+        df3=UKBr.HES_before_assess(df_sub)
+        df_new =pd.merge(df_new,df2,on=['eid'],how='outer')
+        df_new = pd.merge(df_new,df3,on=['eid'],how='outer')
+    return df_new
 
-def post_process(df):
-    ''' things will happen here '''
-    return df
+def count_codes(df,args):
+    code_conv = re.match('ICD(\d+)',args.codeType).group(1)
+    tmp1=list(set(df['diag_icd'+code_conv].tolist()))
+    ids = list(set(df['eid'].tolist()))
+    cols = ['eid']+tmp1
+    df_new=pd.DataFrame(columns=cols)
+    j=0
+    for i in ids:
+        df_sub=df[df['eid']==i]
+        tmp2=list(set(df_sub['diag_icd'+code_conv].tolist()))
+        res = [x in tmp2 for x in tmp1]
+        res = [1*(x>0) for x in res]
+        res = [i]+res
+        df_new.loc[j]=res
+        j += 1
+    return df_new
 
 ###################
 class Object(object):
@@ -77,7 +95,7 @@ args.codes=['I110','I132','I500','I501','I509']
 args.codeType='ICD10'
 args.dateType='epistart'
 args.firstvisit=True
-args.baseline=False
+args.baseline=True
 ###################
 
 if __name__ == '__main__':
