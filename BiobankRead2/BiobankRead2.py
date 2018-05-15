@@ -219,7 +219,7 @@ class BiobankRead():
         # data frame of EIDs
         var = 'Date of attending assessment centre'
         Ds = self.extract_variable(var)#
-        Ds = self.rename_columns(Ds, [var])
+        Ds = self.rename_columns(Ds, var)
         return Ds   
 
     def extract_variable(self, variable=None, baseline_only=False, dropNaN=False):
@@ -324,7 +324,7 @@ class BiobankRead():
         linkstr = self.soup.find_all("a", href = re.compile("coding.cgi\?id="+str(data_coding)+"$"))
         if len(linkstr) == 0:
             return None
-        if not isinstance(linkstr, basestring):
+        if not isinstance(linkstr, str):
             linkstr = linkstr[0]
             link = linkstr['href']
 								            
@@ -397,7 +397,7 @@ class BiobankRead():
             
         # Convert single argument to list
         # This because len(string) > 1
-        if isinstance(keywords, basestring):
+        if isinstance(keywords, str):
             keywords = [keywords]
 
         main_Df = pd.DataFrame(columns =['eid'])
@@ -532,7 +532,7 @@ class BiobankRead():
         conf_names = ['Body mass index (BMI)','Age when attended assessment centre','Ethnic background','Sex']
         # Convert single argument to list
         # This because len(string) > 1
-        if isinstance(more_vars, basestring):
+        if isinstance(more_vars, str):
             more_vars = [more_vars]
             
         # Add optional extras to confound list
@@ -610,7 +610,7 @@ class BiobankRead():
             return None
         # Convert single argument to list
         # This because len(string) > 1
-        if isinstance(col_names, basestring):
+        if isinstance(col_names, str):
             col_names = [col_names]
         V1 =[]
         for var in col_names:
@@ -633,8 +633,10 @@ class BiobankRead():
         col_new = ['eid']
         for k in range(3):
             V0 = self.vars_by_visits(col_names,k)
+            match1 = re.search('.*?(.)\d.\d',V0[0]) #
+            mychar=match1.group(1)
             for v in V0:
-                b,k,a = v.partition('-')
+                b,k,a = v.partition(mychar)
                 if option_str:
                     col_new.append(key+'_'+a)
                 else:
@@ -880,13 +882,12 @@ class BiobankRead():
         new_df2['eid'] = df['eid']
         return new_df2
       
-    def HES_first_time(self,df=None,date='epistart'):
+    def HES_first_last_time(self,df=None,date='epistart'):
         # finds the earliest admission date in HES data for each subject
         #   df should be HES file dataframe outout from "HES_code_match"
-        eids_unique = df['eid'].tolist()
-        eids_unique = list(set(eids_unique))
+        eids_unique = list(set(df['eid'].tolist()))
         #cols = get_cols_names(df)
-        new_Df = pd.DataFrame(columns=['eid','first_admidate'])
+        new_Df = pd.DataFrame(columns=['eid','first_admidate','latest_admidate'])
        #new_Df['eid']=df['eid']
         res = []
         for ee in eids_unique:
@@ -894,29 +895,29 @@ class BiobankRead():
             res.append(len(tmp))
             #tmp['admidate'] = pd.to_datetime(tmp['admidate'])
             x = tmp[date].replace(np.nan,self.end_follow_up).min()
-            df2=pd.DataFrame([[ee,x]],columns=['eid','first_admidate'])
+            z = tmp[date].replace(np.nan,self.end_follow_up).max()
+            df2=pd.DataFrame([[ee,x,z]],columns=['eid','first_admidate','latest_admidate'])
             new_Df=new_Df.append(df2)#,ignore_index=True)
         return new_Df
         
-    def HES_after_assess(self,df=None,assess_dates=None):
+    def HES_after_assess(self,df=None,assess_dates=None,date='epistart'):
         # returns boolean : subject had HES records after baseline
         # input dates needs to come from HES_first_time()
         #   df should be HES file dataframe
-        eids = assess_dates['eid'].tolist()
-        DF = pd.DataFrame(columns=['eid','After','date_aft'])
+        eids = list(set(df['eid'].tolist()))
+        DF = pd.DataFrame(columns=['eid','After','first_date_aft'])
         for ee in eids:
-            tmp =  df[df.index==ee]
-            tmp_ass_date = assess_dates[assess_dates['eid']==ee]
-            tmp_ass_date=tmp_ass_date['assess_date'].iloc[0]
-            tmp2= tmp[tmp['admidate']>tmp_ass_date]
+            tmp =  df[df['eid']==ee]
+            tmp_ass_date = assess_dates[assess_dates['eid']==ee]['assess_date'].iloc[0]
+            tmp2= tmp[tmp[date]>tmp_ass_date]
             if len(tmp2)>0:
                 oo = 1
                 #tmp2['admidate'] = pd.to_datetime(tmp2['admidate'])
-                x = tmp2['admidate'].replace(np.nan,self.end_follow_up).min()
+                x = tmp2[date].replace(np.nan,self.end_follow_up).min()
             else:
                 oo = 0
                 x = np.nan
-            df2 = pd.DataFrame([[ee,oo,x]],columns=['eid','After','date_aft'])
+            df2 = pd.DataFrame([[ee,oo,x]],columns=['eid','After','first_date_aft'])
             DF = DF.append(df2)
         return DF
         
@@ -927,6 +928,7 @@ class BiobankRead():
         DF['eid'] = dates['eid']
         assess_date = dates['assess_date'].tolist()
         res=[a>b for (a,b) in zip(assess_date,dates['first_admidate'].tolist())]
+        res = 1*(res>0)
         DF['Before'] = res
         return DF
     
