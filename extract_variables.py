@@ -25,6 +25,16 @@ import re
         --cov_corr True\False \
 '''
 
+# Function to deal nicely with Boolean parser options
+# https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
+def str2bool(v):
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
 parser = argparse.ArgumentParser(description="\n BiobankRead Extract_Variable. Does what it says hehe")
 
 in_opts = parser.add_argument_group(title='Input Files', description="Input files. The --csv and --html option are required")
@@ -38,16 +48,17 @@ out_opts.add_argument("--out", metavar='PREFIX', type=str, help='Specify the nam
 
 
 options = parser.add_argument_group(title="Optional input", description="Apply some level of selection on the data")
-options.add_argument("--baseline_only",default=True,type=bool,help="Only keep data from baseline assessment centre")
-options.add_argument("--remove_missing",default=False, nargs='+', type=str,help="Remove subjects with values nan, -3 or -7 for any variable. Can specify which variables to perform that for")
-options.add_argument("--remove_outliers",default=False, nargs='+', type=str,action='store',help="Remove subjects with values beyond x std dev for any cont. variable. Format:[std.dev,one-sided,vars names...]")
-options.add_argument("--filter",default=False, nargs='+', type=str,action='store',help="Filter some variables based on conditions. Keep your requests simple ")
+options.add_argument("--baseline_only", type=str2bool, nargs='?', const=True, default=True,  help="Only keep data from baseline assessment centre")
+options.add_argument("--remove_missing", default=False, nargs='+', type=str,help="Remove subjects with values nan, -3 or -7 for any variable. Can specify which variables to perform that for")
+options.add_argument("--remove_outliers", default=False, nargs='+', type=str,action='store',help="Remove subjects with values beyond x std dev for any cont. variable. Format:[std.dev,one-sided,vars names...]")
+options.add_argument("--filter", default=False, nargs='+', type=str,action='store',help="Filter some variables based on conditions. Keep your requests simple ")
 
 sums = parser.add_argument_group(title="Optional request for basic summary", description="Perform mean /cov/ corr/ dist plots for the data")
 sums.add_argument("--aver_visits",default=False,type=bool,help="get average measurement per visit")
 sums.add_argument("--cov_corr",default=False,type=bool,help="Produce extra file of cov/corr between variables. Will have same location and similar name to main output file")
 
 ########################################################
+
 
 def whitespace_search(smth,lst):
     smth = re.findall(r"[\w']+", smth)
@@ -182,12 +193,10 @@ def filter_vars(df,args):
 def extract_the_things(args):
         if UKBr.is_doc(args.vars):
             args.vars=UKBr.read_basic_doc(args.vars)
-        bo=False
         if args.baseline_only:
             print('Baseline visit data only')
-            bo=True
         stuff=actual_vars(args.vars)
-        Df = UKBr.extract_many_vars(stuff,baseline_only=bo)
+        Df = UKBr.extract_many_vars(stuff,baseline_only=args.baseline_only)
         if args.remove_missing:
             print('Remove all values marked as "nan", "-3" and "-7"')
             Df = remove(Df,args)
@@ -261,6 +270,7 @@ def produce_plots(df,args):
 
 if __name__ == '__main__':
     args = parser.parse_args()
+    
     namehtml=args.html
     namecsv=args.csv
     ### import Biobankread package
@@ -270,7 +280,12 @@ if __name__ == '__main__':
         UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv)
         print("BBr loaded successfully")
     except:
-        raise ImportError('UKBr could not be loaded properly')
+        try:
+            import BiobankRead2.BiobankRead2 as UKBr
+            UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv)
+            print("BBr loaded successfully")
+        except:
+            raise ImportError('UKBr could not be loaded properly')
     Df=extract_the_things(args)
     Df=float_to_cat(Df)
     final_name = args.out+'.csv'

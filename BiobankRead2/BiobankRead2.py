@@ -215,11 +215,11 @@ class BiobankRead():
         EIDs = pd.read_csv(filename, usecols=['eid'])
         return EIDs
     
-    def Get_ass_dates(self, dropNaN=False):
+    def Get_ass_dates(self, dropNaN=False, baseline_only=False):
         # data frame of EIDs
         var = 'Date of attending assessment centre'
         Ds = self.extract_variable(var)#
-        Ds = self.rename_columns(Ds, var)
+        Ds = self.rename_columns(Ds, var, baseline_only=baseline_only)
         return Ds   
 
     def extract_variable(self, variable=None, baseline_only=False, dropNaN=False):
@@ -411,7 +411,7 @@ class BiobankRead():
             if spaces:
                 b,k,a = var.partition(' ')
                 var = b
-            DBP = self.rename_columns(DBP, var)
+            DBP = self.rename_columns(DBP, var, baseline_only=baseline_only)
             
             # Get rid of NaNs
             if dropNaN:
@@ -523,7 +523,7 @@ class BiobankRead():
         return new_df
     
     
-    def confounders_gen(self, more_vars = []):
+    def confounders_gen(self, more_vars = [], baseline_only=False):
         # creates a dictionary of conventional confounding variables
         # more can be added through the 'more_vars' input 
         # output = dictionary with dfs, 1 df per variable
@@ -543,7 +543,7 @@ class BiobankRead():
         df_new = {}
         for var in conf_names:
             tmp = self.extract_variable(variable=var)
-            tmp = self.rename_columns(df=tmp,key=var)
+            tmp = self.rename_columns(df=tmp,key=var, baseline_only=baseline_only)
             df_new[var] = tmp
             
         return df_new,conf_names
@@ -627,11 +627,12 @@ class BiobankRead():
         return V1
     
 
-    def rename_columns(self, df=None,key=None,option_str=True):
+    def rename_columns(self, df=None,key=None,option_str=True, baseline_only=False):
         # rename the columns of a data frame with something sensible
         col_names = df.columns.tolist()
         col_new = ['eid']
-        for k in range(3):
+        nvisits = 1 if baseline_only else 3
+        for k in range(nvisits):
             V0 = self.vars_by_visits(col_names,k)
             match1 = re.search('.*?(.)\d.\d',V0[0]) #
             mychar=match1.group(1)
