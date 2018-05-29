@@ -18,18 +18,18 @@ parser = argparse.ArgumentParser(description="\n BiobankRead HES_extract. Extrac
 
 in_opts = parser.add_argument_group(title='Input Files', description="Input files. The --csv and --html option are required")
 in_opts.add_argument("--tsv", metavar="{File1}", type=str,required=True, help='Specify the tsv HES data file.')
-in_opts.add_argument("--codeType", type=str,required=True, help='ICD10, ICD9 or OPCS')
 in_opts.add_argument("--csv", metavar="{File1}", type=str,required=True, help='Specify the csv file associated with the UKB application.')
 in_opts.add_argument("--html", metavar="{File2}", type=str,required=True, help='Specify the html file associated with the UKB application.')
 
 out_opts = parser.add_argument_group(title="Output formatting", description="Set the output directory and common name of files.")
 out_opts.add_argument("--out", metavar='PREFIX', type=str, help='Specify the name prefix to output files')
-out_opts.add_argument("--codes", nargs='+', type=str, help='Specify disease codes to extract', required=True)
+out_opts.add_argument("--codes", nargs='+',required=True, type=str, help='Specify disease codes to extract', required=True)
+out_opts.add_argument("--codeType", type=str,required=True, help='ICD10, ICD9 or OPCS')
 
 options = parser.add_argument_group(title="Optional input", description="Apply some level of selection on the data")
 options.add_argument("--dateType",default='epistart',type=str,help="epistart or admidate")
-options.add_argument("--firstvisit",default=True,type=bool,help="Only keep earliest visit for each subjects")
-options.add_argument("--baseline",default=True,type=bool,nargs='+',help="Keep visits before or after baseline assessment only")
+options.add_argument("--firstvisit",default=True,type=bool,help="Mark earliest/latest visit for each subjects")
+options.add_argument("--baseline",default=True,type=bool,nargs='+',help="Mark visits before and after baseline assessment ")
 
 
 
