@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Mon Jun  4 17:47:20 2018
+Created on Tue Jun  5 18:29:00 2018
 
 @author: Deborah
 """
@@ -23,21 +23,31 @@ in_opts.add_argument("--html", metavar="{File2}", type=str,required=True, help='
 
 out_opts = parser.add_argument_group(title="Output formatting", description="Set the output directory and common name of files.")
 out_opts.add_argument("--out", metavar='PREFIX', type=str, help='Specify the name prefix to output files')
-out_opts.add_argument("--codes", nargs='+',required=True, type=str, help='Specify disease codes to extract', required=True)
-out_opts.add_argument("--SRCancer", default=False,type=str2bool, help='Cancer or Non-cancer')
+out_opts.add_argument("--codes", nargs='+', type=str, help='Specify cause of death codes to extract', required=True)
 
 options = parser.add_argument_group(title="Optional input", description="Apply some level of selection on the data")
-options.add_argument("--baseline_only", type=str2bool, nargs='?', const=True, default=True,  help="Only keep data from baseline assessment centre")
+options.add_argument("--primary", type=str2bool, nargs='?', const=True, default=True,  help="Primary cause of death")
+options.add_argument("--secondary", type=str2bool, nargs='?', const=True, default=False,  help="Secondary cause of death")
+############################################################################################################
 
-def num_codes(args):
-    codes = [float(x) for x in args.codes]
-    return codes
 
-def first_visit(df):
-    cols_1st = [x for x in df.columns.tolist() if '0.' in x]
-    return cols_1st
+class Object(object):
+   pass
+args = Object()
+args.out='test1'
+args.html=r'D:\UkBiobank\Application 10035\\21204\ukb21204.html'
+args.csv=r'D:\UkBiobank\Application 10035\\21204\ukb21204.csv'
+args.tsv=r'D:\UkBiobank\Application 10035\HES\ukb.tsv'
+args.codes=['I110','I132','I500','I501','I509']
+args.codeType='ICD10'
+args.dateType='epistart'
+args.firstvisit=True
+args.baseline=True
+###################
 
-def extract_SR_stuff(args):
+
+
+def extractdeath(args):
     All_vars = UKBr.Vars
     if args.SRCancer:
         SR = [x for x in All_vars if 'Cancer code, self-reported' in str(x)]
@@ -47,15 +57,17 @@ def extract_SR_stuff(args):
     codes=num_codes(args)
     return SR_df
 
+
 def count_codes(df,args):
-    tmp1=num_codes(args)
+    code_conv = re.match('ICD(\d+)',args.codeType).group(1)
+    tmp1=list(set(df['diag_icd'+code_conv].tolist()))
     ids = list(set(df['eid'].tolist()))
     cols = ['eid']+tmp1
     df_new=pd.DataFrame(columns=cols)
     j=0
     for i in ids:
         df_sub=df[df['eid']==i]
-        tmp2=list(df_sub.iloc[0][1:len(df_sub.columns)-1])
+        tmp2=list(set(df_sub['diag_icd'+code_conv].tolist()))
         res = [x in tmp2 for x in tmp1]
         res = [1*(x>0) for x in res]
         res = [i]+res
@@ -63,30 +75,12 @@ def count_codes(df,args):
         j += 1
     return df_new
 
-def clean_up(df):
-    df['SR_codes']=df[df.columns.tolist()[1::]].sum(axis=1)
-    everyone=UKBr.GetEIDs()
-    df2=pd.merge(everyone,df[['eid','SR_codes']],on='eid',how='outer')
-    df2.fillna(value=0,inplace=True)
-    return df2
-
-###################
-class Object(object):
-   pass
-args = Object()
-args.out='D:\MSc projects\\2018\\Confounders\SR_lungCancer'
-args.html=r'D:\UkBiobank\Application 10035\\21204\ukb21204.html'
-args.csv=r'D:\UkBiobank\Application 10035\\21204\ukb21204.csv'
-args.codes=['1004','1007','1009']
-args.SRCancer=True
-args.baseline_only=False
-###################
-
 
 if __name__ == '__main__':
     args = parser.parse_args()
     namehtml=args.html
     namecsv=args.csv
+    nametsv=args.tsv
     ### import Biobankread package
    # sys.path.append('D:\new place\Postdoc\python\BiobankRead-Bash')
     try:
@@ -95,8 +89,3 @@ if __name__ == '__main__':
         print("BBr loaded successfully")
     except:
         raise ImportError('UKBr could not be loaded properly')
-    SR_df = extract_SR_stuff(args)
-    #optional but nicer
-    SR_df=clean_up(SR_df)
-    final_name = args.out+'.csv'
-    SR_df.to_csv(final_name,sep=',',index=None)
