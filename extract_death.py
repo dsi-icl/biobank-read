@@ -23,7 +23,7 @@ in_opts.add_argument("--html", metavar="{File2}", type=str,required=True, help='
 
 out_opts = parser.add_argument_group(title="Output formatting", description="Set the output directory and common name of files.")
 out_opts.add_argument("--out", metavar='PREFIX', type=str, help='Specify the name prefix to output files')
-out_opts.add_argument("--codes", nargs='+', type=str, help='Specify cause of death codes to extract', required=True)
+out_opts.add_argument("--codes", nargs='+', type=str, default='All', help='Specify cause of death codes to extract')
 
 options = parser.add_argument_group(title="Optional input", description="Apply some level of selection on the data")
 options.add_argument("--primary", type=str2bool, nargs='?', const=True, default=True,  help="Primary cause of death")
@@ -34,40 +34,31 @@ options.add_argument("--secondary", type=str2bool, nargs='?', const=True, defaul
 class Object(object):
    pass
 args = Object()
-args.out='test1'
+args.out='D:\MSc projects\\2018\\Confounders\death_lungCancer'
 args.html=r'D:\UkBiobank\Application 10035\\21204\ukb21204.html'
 args.csv=r'D:\UkBiobank\Application 10035\\21204\ukb21204.csv'
-args.tsv=r'D:\UkBiobank\Application 10035\HES\ukb.tsv'
-args.codes=['I110','I132','I500','I501','I509']
-args.codeType='ICD10'
-args.dateType='epistart'
-args.firstvisit=True
-args.baseline=True
+args.codes=['C34']
+args.primary=True
+args.secondary=True
 ###################
 
-
-
-def extractdeath(args):
-    All_vars = UKBr.Vars
-    if args.SRCancer:
-        SR = [x for x in All_vars if 'Cancer code, self-reported' in str(x)]
+def getcodes(args):
+    if UKBr.is_doc(args.codes):
+        Codes=UKBr.read_basic_doc(args.codes)
     else:
-        SR = [x for x in All_vars if 'Non-cancer illness code, self-reported' in str(x)]
-    SR_df = UKBr.extract_variable(SR[0],baseline_only=args.baseline_only)
-    codes=num_codes(args)
-    return SR_df
-
+        Codes = args.codes
+    Codes = UKBr.find_ICD10_codes(select=Codes)
+    return Codes
 
 def count_codes(df,args):
-    code_conv = re.match('ICD(\d+)',args.codeType).group(1)
-    tmp1=list(set(df['diag_icd'+code_conv].tolist()))
+    tmp1=getcodes(args)
     ids = list(set(df['eid'].tolist()))
     cols = ['eid']+tmp1
     df_new=pd.DataFrame(columns=cols)
     j=0
     for i in ids:
         df_sub=df[df['eid']==i]
-        tmp2=list(set(df_sub['diag_icd'+code_conv].tolist()))
+        tmp2=list(df_sub.iloc[0][1:len(df_sub.columns)-1])
         res = [x in tmp2 for x in tmp1]
         res = [1*(x>0) for x in res]
         res = [i]+res
@@ -75,12 +66,34 @@ def count_codes(df,args):
         j += 1
     return df_new
 
+def extractdeath(args):
+    All_vars = UKBr.Vars
+    if args.secondary and args.primary:
+        SR = [x for x in All_vars if 'of death: ICD10' in str(x)]
+        dead_df = UKBr.extract_many_vars(SR,baseline_only=False)
+    else:
+        string = 'Underlying (primary) cause'*args.primary + 'Contributory (secondary) causes'*args.secondary
+        SR = [x for x in All_vars if string+' of death: ICD10' in str(x)]
+        dead_df = UKBr.extract_variable(SR[0],baseline_only=False)
+    dead_df.dropna(axis=0,how='all',subset=dead_df.columns[1::],inplace=True)
+    df = count_codes(dead_df,args)
+    df['all_cause'] = df[df.columns[1::]].sum(axis=1)
+    df=df[df.all_cause !=0]
+    return df
+
+def dates_died(df):
+    dates='Date of death'
+    dates_df = UKBr.extract_variable(dates,baseline_only=False)
+    dates_df=UKBr.rename_columns(df=dates_df,key='death_date')
+    dates_df.dropna(axis=0,how='all',subset=dates_df.columns[1::],inplace=True)
+    dates_df['death_date']=dates_df[dates_df.columns[1::]].replace(np.nan,UKBr.end_follow_up).min(axis=1)
+    df2=pd.merge(dates_df[['eid','death_date']],df,on='eid',how='inner')
+    return df2
 
 if __name__ == '__main__':
     args = parser.parse_args()
     namehtml=args.html
     namecsv=args.csv
-    nametsv=args.tsv
     ### import Biobankread package
    # sys.path.append('D:\new place\Postdoc\python\BiobankRead-Bash')
     try:
@@ -89,3 +102,7 @@ if __name__ == '__main__':
         print("BBr loaded successfully")
     except:
         raise ImportError('UKBr could not be loaded properly')
+    Df = extractdeath(args)
+    Df = dates_died(Df)
+    final_name = args.out+'.csv'
+    Df.to_csv(final_name,sep=',',index=None)

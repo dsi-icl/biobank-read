@@ -44,18 +44,22 @@ def extract_SR_stuff(args):
     else:
         SR = [x for x in All_vars if 'Non-cancer illness code, self-reported' in str(x)]
     SR_df = UKBr.extract_variable(SR[0],baseline_only=args.baseline_only)
-    codes=num_codes(args)
+    SR_df.dropna(axis=0,how='all',subset=SR_df.columns[1::],inplace=True)
+    SR_df=count_codes(SR_df,args)
+    SR_df['all'] = SR_df[SR_df.columns[1::]].sum(axis=1)
+    SR_df=SR_df[SR_df['all'] !=0]
     return SR_df
 
 def count_codes(df,args):
     tmp1=num_codes(args)
     ids = list(set(df['eid'].tolist()))
-    cols = ['eid']+tmp1
+    cols = ['eid']+[str(x) for x in tmp1]
     df_new=pd.DataFrame(columns=cols)
     j=0
     for i in ids:
         df_sub=df[df['eid']==i]
         tmp2=list(df_sub.iloc[0][1:len(df_sub.columns)-1])
+        tmp2=[x for x in tmp2 if str(x) != 'nan']
         res = [x in tmp2 for x in tmp1]
         res = [1*(x>0) for x in res]
         res = [i]+res
@@ -63,12 +67,12 @@ def count_codes(df,args):
         j += 1
     return df_new
 
-def clean_up(df):
-    df['SR_codes']=df[df.columns.tolist()[1::]].sum(axis=1)
-    everyone=UKBr.GetEIDs()
-    df2=pd.merge(everyone,df[['eid','SR_codes']],on='eid',how='outer')
-    df2.fillna(value=0,inplace=True)
-    return df2
+#def clean_up(df):
+#    df['SR_codes']=df[df.columns.tolist()[1::]].sum(axis=1)
+#    everyone=UKBr.GetEIDs()
+#    df2=pd.merge(everyone,df[['eid','SR_codes']],on='eid',how='outer')
+#    df2.fillna(value=0,inplace=True)
+#    return df2
 
 ###################
 class Object(object):
@@ -97,6 +101,5 @@ if __name__ == '__main__':
         raise ImportError('UKBr could not be loaded properly')
     SR_df = extract_SR_stuff(args)
     #optional but nicer
-    SR_df=clean_up(SR_df)
     final_name = args.out+'.csv'
     SR_df.to_csv(final_name,sep=',',index=None)

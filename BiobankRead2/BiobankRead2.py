@@ -106,7 +106,7 @@ class BiobankRead():
         
         #Time/date variables
         self.date_format = "%Y-%m-%d"
-        self.end_follow_up = "2016-02-15"
+        self.end_follow_up = "2026-02-15"
         self.start_follow_up = "2006-05-10"
         self.Time_end = datetime.strptime(self.end_follow_up, self.date_format)
         
