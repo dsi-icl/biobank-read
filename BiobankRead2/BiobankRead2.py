@@ -98,8 +98,10 @@ class BiobankRead():
 
         #HES file processing variables
         this_dir, this_filename = os.path.split(__file__)
-        self.DATA_PATH   = os.path.join(this_dir, "data", "coding19.tsv")
-        self.DATA_PATH_2 = os.path.join(this_dir, "data", "ICD9_codes.csv")        
+        self.DATA_PATH      = os.path.join(this_dir, "data", "coding19.tsv")
+        self.DATA_PATH_2    = os.path.join(this_dir, "data", "ICD9_codes.csv") 
+        self.DATA_PATH_SR   = os.path.join(this_dir, "data", "coding3.tsv") 
+        self.DATA_PATH_SR_2 = os.path.join(this_dir, "data", "coding6.tsv") 
         
         # Parse html 
         self.soup = self.makeSoup()
@@ -758,6 +760,31 @@ class BiobankRead():
                 new_Df=new_Df[((new_Df[var]-new_Df[var].mean())/new_Df[var].std())<lim]
         return new_Df
     
+    def find_SR_codes(self,select=None,cancer=True):
+        if cancer:
+            tmp = self.HES_tsv_read(self.DATA_PATH_SR)
+        else:
+            tmp = self.HES_tsv_read(self.DATA_PATH_SR_2)
+        descr = tmp['meaning'].tolist()
+        find =[x for x in descr if select in x]
+        SR_cancer = []
+        for d in find:
+            ## get 1st order codes
+            c = tmp[tmp.meaning==d]['coding']
+            SR_cancer.append(c.iloc[0])
+            ## get higher order codes
+            node_id = tmp[tmp.meaning==d]['node_id'].iloc[0]
+            sub = tmp[tmp.parent_id==node_id]
+            Nsub = len(sub)
+            while Nsub > 0:
+                codes_sub = sub['coding'].tolist()
+                SR_cancer = SR_cancer +codes_sub
+                ## 
+                node_id = sub['node_id'].tolist()
+                sub = tmp[[x in node_id for x in tmp.parent_id]]
+                Nsub = len(sub)
+        SR_cancer = list(set(SR_cancer))
+        return SR_cancer
 ###################################################################################
  ################## HES data extraction + manipulation ##############################
 ###################################################################################

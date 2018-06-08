@@ -8,11 +8,16 @@ Created on Tue Jun  5 18:29:00 2018
 import argparse
 import pandas as pd
 import numpy as np
-import warnings
 import re
 
 '''Example run:
-    python extract_SR.py \
+    python extract_death.py \
+        --csv <csv file> \
+        --html <html file> \
+        --out <results folder> \
+        --codes ['C34'] \ ## death by lung cancer. Default is 'All', returns all deaths by any cause in UKB
+        --primary True \ ## parse primary cause of death
+        --secondary False \ ## parse contributing causes to death
 '''
 
 parser = argparse.ArgumentParser(description="\n BiobankRead HES_extract. Extracts data from HES records as made available within UKB")
@@ -37,7 +42,7 @@ args = Object()
 args.out='D:\MSc projects\\2018\\Confounders\death_lungCancer'
 args.html=r'D:\UkBiobank\Application 10035\\21204\ukb21204.html'
 args.csv=r'D:\UkBiobank\Application 10035\\21204\ukb21204.csv'
-args.codes=['C34']
+args.codes='All'#['C34']
 args.primary=True
 args.secondary=True
 ###################
@@ -66,6 +71,27 @@ def count_codes(df,args):
         j += 1
     return df_new
 
+def merge_primary(df):
+    cols = df.columns.tolist()[1::]
+    primary = [x for x in cols if '(primary)' in x]
+    ids = list(set(df['eid'].tolist()))
+    res=[]
+    for i in ids:
+        df_sub=df[df['eid']==i]
+        res.append(df_sub[primary].values.any())
+    df['primary cause of death']=res
+    df.drop(primary, axis=1, inplace=True)
+    return df
+
+def rename_cols_death(df):
+    cols = df.columns.tolist()[1::]
+    secondary = [x for x in cols if '(secondary)' in x]
+    for c in secondary:
+        [a,b]=c.split('-')
+        x = 'secondary cause of death-'+b
+        df.rename(columns={c: x},inplace=True)
+    return df
+
 def extractdeath(args):
     All_vars = UKBr.Vars
     if args.secondary and args.primary:
@@ -76,18 +102,24 @@ def extractdeath(args):
         SR = [x for x in All_vars if string+' of death: ICD10' in str(x)]
         dead_df = UKBr.extract_variable(SR[0],baseline_only=False)
     dead_df.dropna(axis=0,how='all',subset=dead_df.columns[1::],inplace=True)
-    df = count_codes(dead_df,args)
-    df['all_cause'] = df[df.columns[1::]].sum(axis=1)
-    df=df[df.all_cause !=0]
-    return df
+    if args.codes != 'All':
+        dead_df = count_codes(dead_df,args)
+        dead_df['all_cause'] = dead_df[dead_df.columns[1::]].sum(axis=1)
+        dead_df=dead_df[dead_df.all_cause !=0]
+    else:
+        dead_df=merge_primary(dead_df)
+        dead_df=rename_cols_death(dead_df)
+    return dead_df
 
 def dates_died(df):
-    dates='Date of death'
-    dates_df = UKBr.extract_variable(dates,baseline_only=False)
-    dates_df=UKBr.rename_columns(df=dates_df,key='death_date')
+    dates=['Date of death','Age at death']
+    dates_df = UKBr.extract_many_vars(dates,baseline_only=False)
+    dates = [x for x in dates_df.columns.tolist()[1::] if 'Date' in x]
+    ages = [x for x in dates_df.columns.tolist()[1::] if 'Age' in x]
     dates_df.dropna(axis=0,how='all',subset=dates_df.columns[1::],inplace=True)
-    dates_df['death_date']=dates_df[dates_df.columns[1::]].replace(np.nan,UKBr.end_follow_up).min(axis=1)
-    df2=pd.merge(dates_df[['eid','death_date']],df,on='eid',how='inner')
+    dates_df['death_date']=dates_df[dates].replace(np.nan,UKBr.end_follow_up).min(axis=1)
+    dates_df['death_age']=dates_df[ages].replace(np.nan,150).min(axis=1)
+    df2=pd.merge(dates_df[['eid','death_date','death_age']],df,on='eid',how='inner')
     return df2
 
 if __name__ == '__main__':
