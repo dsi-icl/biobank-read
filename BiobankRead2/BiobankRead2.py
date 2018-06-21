@@ -161,16 +161,9 @@ class BiobankRead():
                 variable=f.read()
         except:
             raise IOError('Input file is not a .txt file')
-        commas=re.findall(',',variable)
-        commas = 1*(len(commas)>0)
-        spaces=re.findall('\n',variable)
-        spaces = 1*(len(spaces)>0)
-        if commas:
-            lst=variable.split(',')
-        elif spaces:
-            lst=variable.split('\n')
-        else:
-            raise IOError('Input file formatted wrong, needs to be comma OR new-line-break separated')
+        lst =[str(line) for line in open(doc).read().splitlines()]#.readlines()] 
+	if lst is None:
+            raise IOError('Input file formatted wrong, needs to be new-line-break separated')
         return lst
     
     #############################################################

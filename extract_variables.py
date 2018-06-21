@@ -56,7 +56,7 @@ in_opts.add_argument("--html", metavar="{File2}", type=str,required=True, help='
 
 
 out_opts = parser.add_argument_group(title="Output formatting", description="Set the output directory and common name of files.")
-out_opts.add_argument("--vars", nargs='+', type=str, help='Specify variables to extract', required=True)
+out_opts.add_argument("--vars", metavar="{File3}", type=str, help='Specify variables to extract', required=True)
 out_opts.add_argument("--out", metavar='PREFIX', type=str, help='Specify the name prefix to output files')
 
 
@@ -64,7 +64,7 @@ options = parser.add_argument_group(title="Optional input", description="Apply s
 options.add_argument("--baseline_only", type=str2bool, nargs='?', const=True, default=True,  help="Only keep data from baseline assessment centre")
 options.add_argument("--remove_missing", default=False, nargs='+', type=str,help="Remove subjects with values nan, -3 or -7 for any variable. Can specify which variables to perform that for")
 options.add_argument("--remove_outliers", type=str2bool, default=False, nargs='+',action='store',help="Remove subjects with values beyond x std dev for any cont. variable. Format:[std.dev,one-sided,vars names...]")
-options.add_argument("--filter", default=False, nargs='+', type=str,action='store',help="Filter some variables based on conditions. Keep your requests simple ")
+options.add_argument("--filter", default=False, nargs='+', metavar="{File4}",type=str,action='store',help="Filter some variables based on conditions. Keep your requests simple ")
 
 sums = parser.add_argument_group(title="Optional request for basic summary", description="Perform mean /cov/ corr/ dist plots for the data")
 sums.add_argument("--aver_visits",default=False,type=str2boolorlist,help="get average measurement per visit")
@@ -96,15 +96,18 @@ def actual_vars(smth):
         if type(V) is not str:
             ValueError('Variables need to be strings')
             return None
-        if ' ' in V:
-            res = whitespace_search(V,All)
-        else:
+        if ' ' in V: 
+	    res = whitespace_search(V,All)
+            print(res)
+	else:
             res = [x for x in All if V in x]
-        for i in res:
+            print(res) 
+	for i in res:
             actual_vars_list.append(i)
         if len(actual_vars_list)==0: 
             ValueError('Variables names wrong. Go back to app documents and double-check what you actually have')
             return None
+    actual_vars_list=list(set(actual_vars_list))
     return actual_vars_list
    
 def bad_chars(df):
@@ -206,10 +209,13 @@ def filter_vars(df,args):
 
 def extract_the_things(args):
         if UKBr.is_doc(args.vars):
+            print('doc detected')
             args.vars=UKBr.read_basic_doc(args.vars)
-        if args.baseline_only:
+            print(args.vars)
+	if args.baseline_only:
             print('Baseline visit data only')
         stuff=actual_vars(args.vars)
+	print(stuff)
         Df = UKBr.extract_many_vars(stuff,baseline_only=args.baseline_only)
         if args.remove_missing:
             print('Remove all values marked as "nan", "-3" and "-7"')
@@ -227,10 +233,6 @@ def extract_the_things(args):
             Df = filter_vars(Df,args)
         return Df
 
-#def eid_to_app(df,args):
-#    num=args.appnum
-#    #### how to do this? ####
-#    return df
 
 def float_to_cat(df):
     var = df.columns.tolist()[1::]
@@ -300,7 +302,6 @@ if __name__ == '__main__':
             print("BBr loaded successfully")
         except:
             raise ImportError('UKBr could not be loaded properly')
-
     Df=extract_the_things(args)
     Df=float_to_cat(Df)
     final_name = args.out+'.csv'
