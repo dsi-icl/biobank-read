@@ -408,28 +408,77 @@ variables = ['Encoded anonymised participant ID',
  'When diet questionnaire started',
  'Invitation to complete online 24-hour recall dietary questionnaire, acceptance',
  'Invitation to complete online 24-hour recall dietary questionnaire, date sent']
- 
+
+# ----> SET SOMETHING HERE!
+# Set the script to test here
+scriptList = ['extract_variables.py', 'extract_death.py', 'extract_SR.py', 'HES_extract.py']
+scriptnum = 1
+
+# The name of the script to test
+scriptname = scriptList[scriptnum];
+
+
 # Where the data is stored
 csvpath = 'Z:\\EABOAGYE\\Users\\wcrum\\Projects\\UKBB\\UKBB-data-2018\\ukb21204.csv '
 htmlpath =  'Z:\\EABOAGYE\\Users\\wcrum\\Projects\\UKBB\\UKBB-data-2018\\ukb21204.html'
-
-# Variables and conditions
-varList = ['"Age assessment"', '"BMI"', '"Age high blood pressure diagnosed"']
-filterList = ['"Age assessment>50"', '"Age assessment<70"', '"BMI>=23"', '"BMI<=30"']
+hespath = 'something'
 
 # Output
 outname = 'test';
 
-# Construct script path and arguments
-bbreadargs = ['BiobankRead-bash\\extract_variables.py', 
-            ' --csv '+csvpath, 
-            ' --html '+htmlpath, 
-            ' --vars ' + ' '.join(varList), 
-            ' --filter ' + ' '.join(filterList), 
-            ' --remove_outliers True', 
-            ' --baseline_only False', 
-            ' --out ' + outname]
-            
+# Construct script path and arguments for each script
+if scriptname == 'extract_variables.py':
+    # Variables and conditions
+    varList = ['"Age assessment"', '"BMI"', '"Age high blood pressure diagnosed"']
+    filterList = ['"Age assessment>50"', '"Age assessment<70"', '"BMI>=23"', '"BMI<=30"']
+    # Command string
+    bbreadargs = [scriptname, 
+                ' --csv '+csvpath, 
+                ' --html '+htmlpath, 
+                ' --vars ' + ' '.join(varList), 
+                ' --filter ' + ' '.join(filterList), 
+                ' --remove_outliers True', 
+                ' --baseline_only False', 
+                ' --out ' + outname]
+elif scriptname == 'extract_death.py':
+    # Command string
+    bbreadargs = [scriptname, 
+                ' --csv '+csvpath, 
+                ' --html '+htmlpath, 
+                ' --codes C34 C42',
+                ' --primary True', 
+                ' --secondary False',
+                ' --out ' + outname]
+elif scriptname == 'extract_SR.py':
+    # Command string
+    bbreadargs = [scriptname, 
+                ' --csv '+csvpath, 
+                ' --html '+htmlpath, 
+                ' --baseline_only False', 
+                ' --disease \'lung cancer\'',
+                ' --SRcancer True', 
+                ' --out ' + outname]
+elif scriptname == 'HES_extract.py':
+    codes = ' 1 2 3 4 '
+    # ICD9, ICD10, OPCS
+    codetype = 'ICD9'
+    # epistart or admidate
+    datatype = 'epistart'
+    # Command string
+    bbreadargs = [scriptname, 
+                ' --csv '+csvpath, 
+                ' --html '+htmlpath, 
+                ' --tsv '+hespath,
+                ' --codes ', codes,
+                ' --codetype ', codetype, 
+                ' --datatype ', datatype,
+                ' --firstvisit True', 
+                ' --baseline True', 
+                ' --out ' + outname]
+else:
+    print 'error: scriptname =', scriptname, 'not recognised'
+    sys.exit(1)
+
 # Make command-line
 # Note  append is required here
 subprocessargs = ['python.exe']

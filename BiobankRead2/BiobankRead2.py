@@ -264,7 +264,7 @@ class BiobankRead():
         ## Retrieve all associated columns with variables names 
         # Encoded anonymised participant ID
         key = ['eid']
-	# explicit href search deprecated
+	  # explicit href search deprecated
         #for link in self.soup.find_all('a', href=BiobankRead.sub_link+idx):
         for link in self.soup.find_all("a", href = re.compile("field.cgi\?id="+idx+"$")):
             tmp = str(link.contents[0])#.encode('utf-8'))

@@ -291,6 +291,7 @@ if __name__ == '__main__':
     namecsv=args.csv
     ### import Biobankread package
     # sys.path.append('D:\new place\Postdoc\python\BiobankRead-Bash')
+    # Note some issues with case of directory names on different systems
     try:
         import biobankRead2.BiobankRead2 as UKBr
         UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv)
