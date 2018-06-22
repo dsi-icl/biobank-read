@@ -23,7 +23,7 @@ in_opts.add_argument("--html", metavar="{File2}", type=str,required=True, help='
 
 out_opts = parser.add_argument_group(title="Output formatting", description="Set the output directory and common name of files.")
 out_opts.add_argument("--out", metavar='PREFIX', type=str, help='Specify the name prefix to output files')
-out_opts.add_argument("--codes", nargs='+',required=True, type=str, help='Specify disease codes to extract', required=True)
+out_opts.add_argument("--codes",  metavar="{File3}",nargs='+',required=True, type=str, help='Specify disease codes to extract', required=True)
 out_opts.add_argument("--codeType", type=str,required=True, help='ICD10, ICD9 or OPCS')
 
 options = parser.add_argument_group(title="Optional input", description="Apply some level of selection on the data")

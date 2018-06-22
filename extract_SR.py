@@ -29,7 +29,7 @@ in_opts.add_argument("--html", metavar="{File2}", type=str,required=True, help='
 
 out_opts = parser.add_argument_group(title="Output formatting", description="Set the output directory and common name of files.")
 out_opts.add_argument("--out", metavar='PREFIX', type=str, help='Specify the name prefix to output files')
-out_opts.add_argument("--disease", nargs='+',required=True, type=str, help='Specify disease or code to extract', required=True)
+out_opts.add_argument("--disease",  metavar="{File3}",nargs='+',required=True, type=str, help='Specify disease or code to extract', required=True)
 out_opts.add_argument("--SRCancer", default=False,type=str2bool, help='Cancer or Non-cancer')
 
 options = parser.add_argument_group(title="Optional input", description="Apply some level of selection on the data")

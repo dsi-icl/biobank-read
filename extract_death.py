@@ -38,7 +38,7 @@ in_opts.add_argument("--html", metavar="{File2}", type=str,required=True, help='
 
 out_opts = parser.add_argument_group(title="Output formatting", description="Set the output directory and common name of files.")
 out_opts.add_argument("--out", metavar='PREFIX', type=str, help='Specify the name prefix to output files')
-out_opts.add_argument("--codes", nargs='+', type=str, default='All', help='Specify cause of death codes to extract')
+out_opts.add_argument("--codes", metavar="{File3}", nargs='+', type=str, default='All', help='Specify cause of death codes to extract')
 
 options = parser.add_argument_group(title="Optional input", description="Apply some level of selection on the data")
 options.add_argument("--primary", type=str2bool, nargs='?', const=True, default=True,  help="Primary cause of death")
