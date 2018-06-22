@@ -1,5 +1,10 @@
 #!/bin/bash
 
+#PBS -l walltime=06:00:00
+#PBS -l select=1:ncpus=4:mem=64gb
+#PBS -q med-bio
+#PBS -k oe
+#PBS -N BBR
 
 # Where the data is store'
 CSV_path=$WORK/UkBiobank/Application_236/R4528/ukb4528.csv
