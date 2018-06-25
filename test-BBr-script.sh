@@ -6,6 +6,8 @@
 #PBS -k oe
 #PBS -N BBR
 
+
+$WORK=/work/ds711
 # Where the data is store'
 CSV_path=$WORK/UkBiobank/Application_236/R4528/ukb4528.csv
 HTML_path=$WORK/UkBiobank/Application_236/R4528/ukb4528.html
@@ -34,7 +36,7 @@ python extract_variables.py \
         #--filter $filterList \
         #--remove_outliers 'True' \
         #--baseline_only 'False' \
-	--out $WORK/results/$outname &
+	--out $outname &
 
 python HES_extract.py \
 	--csv $CSV_path \
@@ -45,7 +47,7 @@ python HES_extract.py \
 	--dateTpe 'epistart' \
 	##--firstvisit 'True' \
         ##--baseline 'True' \
-	--out $WORK/results/$outname_HES &
+	--out $outname_HES &
 
 python extract_death.py \
         --csv $CSV_path \
@@ -53,7 +55,7 @@ python extract_death.py \
 	--codes $Death_codes \
 	##--primary 'True' \
         ##--secondary 'False' \
-	--out $WORK/results/$outname_death &
+	--out $outname_death &
 
 
 python extract_SR.py \
@@ -61,7 +63,9 @@ python extract_SR.py \
         --html $HTML_path \
 	--disease $SR_things \
 	--SRcancer 'True' \
-	--out $WORK/results/$outname_SR &
+	--out $outname_SR &
+
+cp *.csv $PBS_O_WORKDIR 
 
 
 
