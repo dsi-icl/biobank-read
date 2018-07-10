@@ -43,6 +43,7 @@ out_opts.add_argument("--codes", metavar="{File3}", nargs='+', type=str, default
 options = parser.add_argument_group(title="Optional input", description="Apply some level of selection on the data")
 options.add_argument("--primary", type=str2bool, nargs='?', const=True, default=True,  help="Primary cause of death")
 options.add_argument("--secondary", type=str2bool, nargs='?', const=True, default=False,  help="Secondary cause of death")
+options.add_argument("--excl", metavar="{File5}", type=str, default=None, help='Specify the csv file of EIDs to be excluded.')
 ############################################################################################################
 
 
@@ -58,11 +59,13 @@ args.secondary=True
 ###################
 
 def getcodes(args):
-    if UKBr.is_doc(args.codes):
-        Codes=UKBr.read_basic_doc(args.codes)
-    else:
-        Codes = args.codes
+    #argnames = vars(args)
+    #codes = argnames['codes'][0]
+    codes = args.codes
+    if UKBr.is_doc(codes[0]):
+        Codes=UKBr.read_basic_doc(codes[0])
     Codes = UKBr.find_ICD10_codes(select=Codes)
+    print Codes
     return Codes
 
 def count_codes(df,args):
@@ -145,17 +148,18 @@ if __name__ == '__main__':
     args = parser.parse_args()
     namehtml=args.html
     namecsv=args.csv
+    nameexcl = args.excl
     ### import Biobankread package
     # sys.path.append('D:\new place\Postdoc\python\BiobankRead-Bash')
     # Note some issues with case of directory names on different systems
     try:
         import biobankRead2.BiobankRead2 as UKBr
-        UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv)
+        UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
         print("BBr loaded successfully")
     except:
         try:
             import BiobankRead2.BiobankRead2 as UKBr
-            UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv)
+            UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
             print("BBr loaded successfully")
         except:
             raise ImportError('UKBr could not be loaded properly')
