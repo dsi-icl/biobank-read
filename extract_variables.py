@@ -15,6 +15,7 @@ import re
     python extract_variables.py \
         --csv x/y/z.csv \
         --html x/y/z.html \
+        --excl x/y/z.csv \
         --vars <list of variables>, as is or in .txt file \
         --out <directory name> x1\y1 \
 (optionally)
@@ -56,7 +57,7 @@ in_opts.add_argument("--html", metavar="{File2}", type=str,required=True, help='
 
 
 out_opts = parser.add_argument_group(title="Output formatting", description="Set the output directory and common name of files.")
-out_opts.add_argument("--vars", metavar="{File3}", type=str, help='Specify variables to extract', required=True)
+out_opts.add_argument("--vars", metavar="{File3}", type=str, nargs='+', help='Specify variables to extract', required=True)
 out_opts.add_argument("--out", metavar='PREFIX', type=str, help='Specify the name prefix to output files')
 
 
@@ -65,6 +66,7 @@ options.add_argument("--baseline_only", type=str2bool, nargs='?', const=True, de
 options.add_argument("--remove_missing", default=False, nargs='+', type=str,help="Remove subjects with values nan, -3 or -7 for any variable. Can specify which variables to perform that for")
 options.add_argument("--remove_outliers", type=str2bool, default=False, nargs='+',action='store',help="Remove subjects with values beyond x std dev for any cont. variable. Format:[std.dev,one-sided,vars names...]")
 options.add_argument("--filter", default=False, nargs='+', metavar="{File4}",type=str,action='store',help="Filter some variables based on conditions. Keep your requests simple ")
+options.add_argument("--excl", metavar="{File5}", type=str, default=None, help='Specify the csv file of EIDs to be excluded.')
 
 sums = parser.add_argument_group(title="Optional request for basic summary", description="Perform mean /cov/ corr/ dist plots for the data")
 sums.add_argument("--aver_visits",default=False,type=str2boolorlist,help="get average measurement per visit")
@@ -161,6 +163,7 @@ def average_visits(Df,args):
 
 def outliers(Df,args):
     ''' Remove outliers from cont variables'''
+    print args.remove_outliers
     if type(args.remove_outliers) == list:
         var_names = actual_vars(args.remove_outliers[2::])
         std = args.remove_outliers[0]
@@ -208,30 +211,29 @@ def filter_vars(df,args):
     return df
 
 def extract_the_things(args):
-        if UKBr.is_doc(args.vars):
-            print('doc detected')
-            args.vars=UKBr.read_basic_doc(args.vars)
-            print(args.vars)
-	if args.baseline_only:
-            print('Baseline visit data only')
-        stuff=actual_vars(args.vars)
-	print(stuff)
-        Df = UKBr.extract_many_vars(stuff,baseline_only=args.baseline_only)
-        if args.remove_missing:
-            print('Remove all values marked as "nan", "-3" and "-7"')
-            Df = remove(Df,args)
-        if args.remove_outliers:
-            print('Remove outliers for cont variables')
-            Df = outliers(Df,args)
-        if args.aver_visits:
-            print('Compute visit mean for cont variables')
-            Df = average_visits(Df,args)
-        if args.filter:
-            print('Filter variables based on condition')
-            if UKBr.is_doc(args.filter):
-                args.filter=UKBr.read_basic_doc(args.filter)
-            Df = filter_vars(Df,args)
-        return Df
+    print args.vars
+    if UKBr.is_doc(args.vars[0]):
+        args.vars=UKBr.read_basic_doc(args.vars[0])
+    if args.baseline_only:
+        print('Baseline visit data only')
+    stuff=actual_vars(args.vars)
+    print(stuff)
+    Df = UKBr.extract_many_vars(stuff,baseline_only=args.baseline_only)
+    if args.remove_missing:
+        print('Remove all values marked as "nan", "-3" and "-7"')
+        Df = remove(Df,args)
+    if args.remove_outliers:
+        print('Remove outliers for cont variables')
+        Df = outliers(Df,args)
+    if args.aver_visits:
+        print('Compute visit mean for cont variables')
+        Df = average_visits(Df,args)
+    if args.filter:
+        print('Filter variables based on condition')
+        if UKBr.is_doc(args.filter):
+            args.filter=UKBr.read_basic_doc(args.filter)
+        Df = filter_vars(Df,args)
+    return Df
 
 
 def float_to_cat(df):
@@ -286,20 +288,22 @@ def produce_plots(df,args):
 import sys
 if __name__ == '__main__':
     args = parser.parse_args()
-    
+    if args.remove_outliers[0] == True:
+        args.remove_outliers = True
     namehtml=args.html
     namecsv=args.csv
+    nameexcl = args.excl
     ### import Biobankread package
     # sys.path.append('D:\new place\Postdoc\python\BiobankRead-Bash')
     # Note some issues with case of directory names on different systems
     try:
         import biobankRead2.BiobankRead2 as UKBr
-        UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv)
+        UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
         print("BBr loaded successfully")
     except:
         try:
             import BiobankRead2.BiobankRead2 as UKBr
-            UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv)
+            UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
             print("BBr loaded successfully")
         except:
             raise ImportError('UKBr could not be loaded properly')

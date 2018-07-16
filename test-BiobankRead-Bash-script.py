@@ -412,15 +412,16 @@ variables = ['Encoded anonymised participant ID',
 # ----> SET SOMETHING HERE!
 # Set the script to test here
 scriptList = ['extract_variables.py', 'extract_death.py', 'extract_SR.py', 'HES_extract.py']
-scriptnum = 1
+scriptnum = 2
 
 # The name of the script to test
 scriptname = scriptList[scriptnum];
 
 
 # Where the data is stored
-csvpath = 'Z:\\EABOAGYE\\Users\\wcrum\\Projects\\UKBB\\UKBB-data-2018\\ukb21204.csv '
+csvpath = 'Z:\\EABOAGYE\\Users\\wcrum\\Projects\\UKBB\\UKBB-data-2018\\ukb21204.csv'
 htmlpath =  'Z:\\EABOAGYE\\Users\\wcrum\\Projects\\UKBB\\UKBB-data-2018\\ukb21204.html'
+exclpath =  'Z:\\EABOAGYE\\Users\\wcrum\\Projects\\UKBB\\UKBB-data-2018\\w10035_20180503_exclusions.csv'
 hespath = 'something'
 
 # Output
@@ -430,36 +431,45 @@ outname = 'test';
 if scriptname == 'extract_variables.py':
     # Variables and conditions
     varList = ['"Age assessment"', '"BMI"', '"Age high blood pressure diagnosed"']
+    varString = ' '.join(varList)
+    #varString = 'H:\\IC-Stuff\\software\\Biobank\\BiobankRead-Bash\\vars_test.txt'
     filterList = ['"Age assessment>50"', '"Age assessment<70"', '"BMI>=23"', '"BMI<=30"']
     # Command string
     bbreadargs = [scriptname, 
                 ' --csv '+csvpath, 
                 ' --html '+htmlpath, 
-                ' --vars ' + ' '.join(varList), 
+                ' --vars ' + varString, 
                 ' --filter ' + ' '.join(filterList), 
                 ' --remove_outliers True', 
                 ' --baseline_only False', 
+                ' --excl '+exclpath,
                 ' --out ' + outname]
 elif scriptname == 'extract_death.py':
+    # Data file for codes or use list e.g. ' --codes C34  C42'
+    codespath = 'H:\\IC-Stuff\\software\\Biobank\\codes.txt'
     # Command string
     bbreadargs = [scriptname, 
                 ' --csv '+csvpath, 
                 ' --html '+htmlpath, 
-                ' --codes C34 C42',
+                ' --codes '+codespath,
                 ' --primary True', 
                 ' --secondary False',
+                ' --excl '+exclpath,
                 ' --out ' + outname]
 elif scriptname == 'extract_SR.py':
     # Command string
+    # Note use of "" to prevent argsparse breaking up the disease string
     bbreadargs = [scriptname, 
                 ' --csv '+csvpath, 
                 ' --html '+htmlpath, 
                 ' --baseline_only False', 
-                ' --disease \'lung cancer\'',
+                ' --disease "lung cancer" "breast cancer"',
                 ' --SRcancer True', 
+                ' --excl '+exclpath,
                 ' --out ' + outname]
 elif scriptname == 'HES_extract.py':
-    codes = ' 1 2 3 4 '
+    # Data file for codes or use list e.g. ' --codes C34  C42'
+    codespath = 'H:\\IC-Stuff\\software\\Biobank\\codes.txt'
     # ICD9, ICD10, OPCS
     codetype = 'ICD9'
     # epistart or admidate
@@ -469,7 +479,7 @@ elif scriptname == 'HES_extract.py':
                 ' --csv '+csvpath, 
                 ' --html '+htmlpath, 
                 ' --tsv '+hespath,
-                ' --codes ', codes,
+                ' --codes '+codespath,
                 ' --codetype ', codetype, 
                 ' --datatype ', datatype,
                 ' --firstvisit True', 

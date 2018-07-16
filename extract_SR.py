@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 import warnings
 import re
+import sys
 
 '''Example run:
     python extract_SR.py \
@@ -21,6 +22,16 @@ import re
         --baseline_only False \ ## Only keep data from baseline assessment centre
 '''
 
+# Function to deal nicely with Boolean parser options
+# https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
+def str2bool(v):
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
 parser = argparse.ArgumentParser(description="\n BiobankRead HES_extract. Extracts data from HES records as made available within UKB")
 
 in_opts = parser.add_argument_group(title='Input Files', description="Input files. The --csv and --html option are required")
@@ -29,20 +40,21 @@ in_opts.add_argument("--html", metavar="{File2}", type=str,required=True, help='
 
 out_opts = parser.add_argument_group(title="Output formatting", description="Set the output directory and common name of files.")
 out_opts.add_argument("--out", metavar='PREFIX', type=str, help='Specify the name prefix to output files')
-out_opts.add_argument("--disease",  metavar="{File3}",nargs='+',required=True, type=str, help='Specify disease or code to extract', required=True)
-out_opts.add_argument("--SRCancer", default=False,type=str2bool, help='Cancer or Non-cancer')
+out_opts.add_argument("--disease",  metavar="{File3}",nargs='+',required=True, type=str, help='Specify disease or code to extract')
+out_opts.add_argument("--SRcancer", default=False, type=str2bool, help='Cancer or Non-cancer')
 
 options = parser.add_argument_group(title="Optional input", description="Apply some level of selection on the data")
 options.add_argument("--baseline_only", type=str2bool, nargs='?', const=True, default=True,  help="Only keep data from baseline assessment centre")
+options.add_argument("--excl", metavar="{File5}", type=str, default=None, help='Specify the csv file of EIDs to be excluded.')
 
 def num_codes(args):
     if type(args.disease) is str:
-        tmp=UKBr.find_SR_codes(select=args.disease,cancer=args.SRCancer)
+        tmp=UKBr.find_SR_codes(select=args.disease,cancer=args.SRcancer)
     elif type(args.disease) is list:
         tmp = []
         for x in args.disease:
             if type(x) is str:
-                Y = UKBr.find_SR_codes(select=x,cancer=args.SRCancer)
+                Y = UKBr.find_SR_codes(select=x,cancer=args.SRcancer)
                 tmp = tmp +Y
             else:
                 Y = x
@@ -56,11 +68,11 @@ def first_visit(df):
 
 def extract_SR_stuff(args):
     All_vars = UKBr.Vars
-    if args.SRCancer:
+    if args.SRcancer:
         SR = [x for x in All_vars if 'Cancer code, self-reported' in str(x)]
     else:
         SR = [x for x in All_vars if 'Non-cancer illness code, self-reported' in str(x)]
-    SR_df = UKBr.extract_variable(SR[0],baseline_only=args.baseline_only)
+    SR_df = UKBr.extract_variable(SR[0], baseline_only=args.baseline_only)
     SR_df.dropna(axis=0,how='all',subset=SR_df.columns[1::],inplace=True)
     SR_df=count_codes(SR_df,args)
     SR_df['all'] = SR_df[SR_df.columns[1::]].sum(axis=1)
@@ -99,7 +111,7 @@ args.out='D:\MSc projects\\2018\\Confounders\SR_lungCancer'
 args.html=r'D:\UkBiobank\Application 10035\\21204\ukb21204.html'
 args.csv=r'D:\UkBiobank\Application 10035\\21204\ukb21204.csv'
 args.disease='lung cancer'
-args.SRCancer=True
+args.SRcancer=True
 args.baseline_only=False
 ###################
 
@@ -108,14 +120,25 @@ if __name__ == '__main__':
     args = parser.parse_args()
     namehtml=args.html
     namecsv=args.csv
+    nameexcl = args.excl
+    
+    #print args
+    #sys.exit()
+    
     ### import Biobankread package
    # sys.path.append('D:\new place\Postdoc\python\BiobankRead-Bash')
+    # Note some issues with case of directory names on different systems
     try:
         import biobankRead2.BiobankRead2 as UKBr
-        UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv)
+        UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
         print("BBr loaded successfully")
     except:
-        raise ImportError('UKBr could not be loaded properly')
+        try:
+            import BiobankRead2.BiobankRead2 as UKBr
+            UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
+            print("BBr loaded successfully")
+        except:
+            raise ImportError('UKBr could not be loaded properly')
     SR_df = extract_SR_stuff(args)
     #optional but nicer
     final_name = args.out+'.csv'
