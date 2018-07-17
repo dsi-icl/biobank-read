@@ -82,7 +82,7 @@ These files are designed to be called from a command line terminal as follow:
         --csv <csv file> \
         --html <html file> \
         --out <results folder> \
-        --codes [<any ICD10 code>] \ ## Default is 'All', returns all deaths by any cause in UKB
+        --codes <any ICD10 code, in .txt file> \ ## Default is 'All', returns all deaths by any cause in UKB
         --primary True \ ## parse primary cause 
         --secondary False & ## parse contributing causes 
         
@@ -90,7 +90,7 @@ These files are designed to be called from a command line terminal as follow:
         --csv <csv file> \
         --html <html file> \
         --out <results folder> \
-        --disease '<something>' \ ## which self-reported diseases to extract
+        --disease '<something, in .txt file>' \ ## which self-reported diseases to extract
         --SRcancer True \ ## parse self-repoted cancer OR non-cancer diseases
         --baseline_only False & ## Only keep data from baseline assessment centre
         
@@ -99,7 +99,7 @@ These files are designed to be called from a command line terminal as follow:
         --html <html file> \
         --tsv <tsv file> \
         --out <results folder> \
-        --codes <results folder> \
+        --codes <disease codes, in .txt file> \
         --codeType <ICD10 or ICD9> \
         #### optionally
         --dateType <type> \ ### epistart or admidate
@@ -108,12 +108,33 @@ These files are designed to be called from a command line terminal as follow:
  
  
 
-It is best to call these functions within executabel files - such as in the test_ script here - to ensure alll input variables are well specified
+It is best to call these functions within executabel files - such as in the test_ script here - to ensure alll input variables are well specified.
         
 
 ############
-Examples
+Example
 ############
+We aim to extract all data regarding lung cancer in UkBiobank, using the data associated to a specific application. For this purpose, we look through the following:
+
+- HES data: any hospital admission marked with the following ICD10 codes:  C34, C340, C341, C342, C343, C348, C349, or ICD9 codes: 162 (162.0, 2, 3, 4, 5, 8, or 9)
+- Self reported data: anyone who reported having the illnesses # 1001, 1027 and/or 1028 in questionaires (data field 20001_)
+- Mortality data: anyone who had one of the following codes listed as primary_ and/or secondary_ cause(s) of death: C34, C340, C341, C342, C343, C348, C349
+
+Note that some subjects will have records appearing in several or all of these fields.
+
+We proceed by extracting data with the desired specifications as follows:
+
+- python extract_HES.py .... --codes ICD10LC.txt (ICD10LC.txt contains C34, C340, C341, C342, C343, C348, C349) --codeType ICD10 ....
+- python extract_HES.py .... --codes ICD9LC.txt (ICD9LC.txt contains 1620, 1622, 1623, 1624, 1625, 1628, 1629) --codeType ICD9 ....
+- python extract_SR.py .... --disease SRLC.txt (ICD9LC.txt contains 1001, 1027, 1028) --SRcancer True ...
+- python extract_death.py .... --codes ICD10.txt --primary True --seconday True ....
+
+Make sure to specify all other necessary input variables before running the scripts.
+
+Each of these script calls will return an output file, each of these will have one common column: eid - the anonymised IDs of the UKB subjects. Using this, all of the output files can be merged together around their 'eid' columns using any conventional data analysis software (R, python, SAS, ...)
+
+That's it - in a few easy steps we extracted all information on lung cancer available in UKBiobank!
+
 
 
 ################################
@@ -137,3 +158,6 @@ Much gratitude is owed to Dr Bill Crum, who contributed to this project and co-a
 .. _testHFpy: https://github.com/saphir746/BiobankRead/blob/master/test_HF.py
 .. _anaconda: https://conda.io/docs/user-guide/tasks/manage-environments.html
 .. _test: https://github.com/saphir746/BiobankRead-Bash/blob/dev/test-BBr-script.sh
+.. _20001: http://biobank.ndph.ox.ac.uk/showcase/field.cgi?id=20001
+.. _primary: http://biobank.ndph.ox.ac.uk/showcase/field.cgi?id=40001
+.. _secondary: http://biobank.ndph.ox.ac.uk/showcase/field.cgi?id=40002
