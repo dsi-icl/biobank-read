@@ -1,0 +1,139 @@
+################################
+Biobank Read - Bash callable 
+################################
+
+BiobankRead-Bash is a package that pulls out data from UKBiobank files and turns it into readily usable data-frames for any specified variables, with the option of filtering based on user-specified conditions.
+It provides faster and easier pre-processing tools in Python of UKBiobank clinical and phenotypical data, which is otherwise known for its intricate complexity. The functionalities of this package support both main project data and HES records data.
+
+This package is written in python 3 and wrapped in callable scripts, and is intended to be usable as part of processing and analysis pipelines. 
+
+################################
+Overview
+################################
+BiobankRead aims to provide python-based tools for the extraction, cleaning and pre-processing of UK Biobank data.
+(UKBiobank_). Approved researchers will have the ability to access the data through the dedicated online portal_ .
+The package takes avantage of the data frame tools in pandas and of the regex facilities in re.
+
+Biobankread is also a ressourceful tool for creating custom variables , using existing ones, HES records for any disease / groups of diseases, and any data frame manipulation in Pandas.
+
+################################
+Citation
+################################
+To use this package in published work, please cite us using the following DOI:
+
+.. image:: https://zenodo.org/badge/73500060.svg
+   :target: https://zenodo.org/badge/latestdoi/73500060
+
+################################
+UKBiobank data
+################################
+Approved investigators will have access to data, as part of a project, which they have to download in .enc format. The .enc file (enc for encrypted) has to be unpacked locally using helper programs that can be downloaded from the same webpage. Detailed instructions are available on the portal_ ("Data Collection", "Essential Information", "Accessing your data", "Downloading, converting and using your dataset").
+
+After the data has been unpacked locally, there should be two resulting files, a .csv file and a .hmtl file. The csv file contains all the data associated with the project the investigator is working on. The html file explains how that csv file is structured. Conventionally, researchers would open and read the html file, search for a variable, look up its corresponding column number, then extract that column number using STATA, R , Python or similar program.
+
+For each variable, there is between 1 to 28 measurements, across three assessment centre days (baseline, first  and second re-visits). So for one variable, there can be up to 84 associated columns. 
+
+This python package was created with the idea of easing the intricacy of extracting, sorting and analysing such type of data.
+
+HES data
+=========
+HES (Hospital Episode Statistics) data refers to incidentce of hospitalisation anywhere in England for subjects in UKBiobank, as far back as 1997. It contains information about dates of admission/release/operation, diagnosis coded in ICD10 (or ICD9 if prior to 2000), as well as operations & procedure (OPCS) codes when applicable.
+
+This data can be accessed through the portal_ in the following pathway: "Data Collection", "Downloads", "Data Portal", "Connect". This gives access to a database where the data is kept, and has to be queried using SQL.
+
+################################
+Installation
+################################
+Simply Download the files and run from the command line -- in the correct syntaxt. You must have the following installed to execute the files:
+
+- Python 3.6 or later
+- Pandas
+- BeautifulSoup4
+- re
+
+You are strongly adviced to use this package as part of an anaconda_ environment formatted to run python 3.6 with all the aformentioned dependencies.
+
+############
+Usage
+############
+There are 4 files in BiobankRead-bash, all aimed at data extraction, each specialised in a data time:
+
+- extract_variables.py: for generic clinical / phenotype data
+- extract_death.py: for mortality data only
+- extract_SR.py: for self-reported illnesses data
+- extract_HES.py: for illnesses/ incidents recorded in HES data
+
+These files are designed to be called from a command line terminal as follow:
+::
+     python extract_variables.py \
+        --csv x/y/z.csv \
+        --html x/y/z.html \
+        --excl x/y/z.csv \
+        --vars <list of variables>, as is or in .txt file \
+        --out <directory name> x1\y1 \
+        #### (optionally)
+        --baseline_only True\False (default=True)\
+        --remove_missing True\False \
+        --filter <list of conditions on variables in vars>, as is or in .txt file \
+        --aver_visits True\False \
+        --cov_corr True\False &
+        
+     python extract_death.py \
+        --csv <csv file> \
+        --html <html file> \
+        --out <results folder> \
+        --codes [<any ICD10 code>] \ ## Default is 'All', returns all deaths by any cause in UKB
+        --primary True \ ## parse primary cause 
+        --secondary False & ## parse contributing causes 
+        
+     python extract_SR.py \
+        --csv <csv file> \
+        --html <html file> \
+        --out <results folder> \
+        --disease '<something>' \ ## which self-reported diseases to extract
+        --SRcancer True \ ## parse self-repoted cancer OR non-cancer diseases
+        --baseline_only False & ## Only keep data from baseline assessment centre
+        
+     python HES_extract.py \
+        --csv <csv file> \
+        --html <html file> \
+        --tsv <tsv file> \
+        --out <results folder> \
+        --codes <results folder> \
+        --codeType <ICD10 or ICD9> \
+        #### optionally
+        --dateType <type> \ ### epistart or admidate
+        --firstvisit True \ ### Default: True, Mark earliest/latest visit for each subjects
+        --baseline True & ### Mark visits before and after baseline assessment 
+ 
+ 
+
+It is best to call these functions within executabel files - such as in the test_ script here - to ensure alll input variables are well specified
+        
+
+############
+Examples
+############
+
+
+################################
+Acknowledgement
+################################
+BiobankRead was developed as part of the ITMAT Data Science Group and the Epidemiology & Biostatistics department at Imperial College London. 
+
+################################
+Thanks
+################################
+Much gratitude is owed to Dr Bill Crum, who contributed to this project and co-authored its related papers
+
+
+“On the planet Earth, man had always assumed that he was more intelligent than dolphins because he had achieved so much—the wheel, New York, wars and so on—whilst all the dolphins had ever done was muck about in the water having a good time. But conversely, the dolphins had always believed that they were far more intelligent than man—for precisely the same reasons.”
+
+
+.. _UKBiobank: http://www.ukbiobank.ac.uk/
+.. _portal: https://amsportal.ukbiobank.ac.uk/
+.. _zonodo: https://zenodo.org/badge/73500060.svg
+.. _testpy: https://github.com/saphir746/BiobankRead/blob/master/test-class.py
+.. _testHFpy: https://github.com/saphir746/BiobankRead/blob/master/test_HF.py
+.. _anaconda: https://conda.io/docs/user-guide/tasks/manage-environments.html
+.. _test: https://github.com/saphir746/BiobankRead-Bash/blob/dev/test-BBr-script.sh
