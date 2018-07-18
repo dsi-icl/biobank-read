@@ -23,21 +23,22 @@ in_opts.add_argument("--html", metavar="{File2}", type=str,required=True, help='
 
 out_opts = parser.add_argument_group(title="Output formatting", description="Set the output directory and common name of files.")
 out_opts.add_argument("--out", metavar='PREFIX', type=str, help='Specify the name prefix to output files')
-out_opts.add_argument("--codes",  metavar="{File3}",nargs='+',required=True, type=str, help='Specify disease codes to extract', required=True)
+out_opts.add_argument("--codes",  metavar="{File3}",nargs='+',required=True, type=str, help='Specify disease codes to extract')
 out_opts.add_argument("--codeType", type=str,required=True, help='ICD10, ICD9 or OPCS')
 
 options = parser.add_argument_group(title="Optional input", description="Apply some level of selection on the data")
 options.add_argument("--dateType",default='epistart',type=str,help="epistart or admidate")
 options.add_argument("--firstvisit",default=True,type=bool,help="Mark earliest/latest visit for each subjects")
 options.add_argument("--baseline",default=True,type=bool,nargs='+',help="Mark visits before and after baseline assessment ")
+options.add_argument("--excl", metavar="{File5}", type=str, default=None, help='Specify the csv file of EIDs to be excluded.')
 
 
 
 
 ###################
 def getcodes(args):
-    if UKBr.is_doc(args.codes):
-        Codes=UKBr.read_basic_doc(args.codes)
+    if UKBr.is_doc(args.codes[0]):
+        Codes=UKBr.read_basic_doc(args.codes[0])
     else:
         Codes = args.codes
     return Codes
@@ -102,14 +103,27 @@ if __name__ == '__main__':
     args = parser.parse_args()
     namehtml=args.html
     namecsv=args.csv
+    nameexcl = args.excl
     nametsv=args.tsv
+    
     ### import Biobankread package
-   # sys.path.append('D:\new place\Postdoc\python\BiobankRead-Bash')
+    # sys.path.append('D:\new place\Postdoc\python\BiobankRead-Bash')
     try:
         import biobankRead2.BiobankRead2 as UKBr
-        UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv)
+        UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
         print("BBr loaded successfully")
     except:
-        raise ImportError('UKBr could not be loaded properly')
+        try:
+            import BiobankRead2.BiobankRead2 as UKBr
+            UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
+            print("BBr loaded successfully")
+        except:
+            raise ImportError('UKBr could not be loaded properly')
     HES_records=UKBr.HES_tsv_read(filename=nametsv)
     HES_df = extract_disease_codes(HES_records,args)
+
+
+    #optional but nicer
+    final_name = args.out+'.csv'
+    HES_df.to_csv(final_name,sep=',',index=None)
+    

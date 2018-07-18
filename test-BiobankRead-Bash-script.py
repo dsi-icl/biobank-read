@@ -412,7 +412,7 @@ variables = ['Encoded anonymised participant ID',
 # ----> SET SOMETHING HERE!
 # Set the script to test here
 scriptList = ['extract_variables.py', 'extract_death.py', 'extract_SR.py', 'HES_extract.py']
-scriptnum = 2
+scriptnum = 3
 
 # The name of the script to test
 scriptname = scriptList[scriptnum];
@@ -422,7 +422,7 @@ scriptname = scriptList[scriptnum];
 csvpath = 'Z:\\EABOAGYE\\Users\\wcrum\\Projects\\UKBB\\UKBB-data-2018\\ukb21204.csv'
 htmlpath =  'Z:\\EABOAGYE\\Users\\wcrum\\Projects\\UKBB\\UKBB-data-2018\\ukb21204.html'
 exclpath =  'Z:\\EABOAGYE\\Users\\wcrum\\Projects\\UKBB\\UKBB-data-2018\\w10035_20180503_exclusions.csv'
-hespath = 'something'
+hespath = 'Z:\\EABOAGYE\\Users\\wcrum\\Projects\\UKBB\\UKBB-data-2018\\ukb.tsv'
 
 # Output
 outname = 'test';
@@ -473,15 +473,16 @@ elif scriptname == 'HES_extract.py':
     # ICD9, ICD10, OPCS
     codetype = 'ICD9'
     # epistart or admidate
-    datatype = 'epistart'
+    datetype = 'epistart'
     # Command string
     bbreadargs = [scriptname, 
                 ' --csv '+csvpath, 
                 ' --html '+htmlpath, 
                 ' --tsv '+hespath,
+                ' --excl '+exclpath,
                 ' --codes '+codespath,
-                ' --codetype ', codetype, 
-                ' --datatype ', datatype,
+                ' --codeType '+ codetype, 
+                ' --dateType '+ datetype,
                 ' --firstvisit True', 
                 ' --baseline True', 
                 ' --out ' + outname]
