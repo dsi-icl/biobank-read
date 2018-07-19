@@ -69,12 +69,12 @@ These files are designed to be called from a command line terminal as follow:
         --csv x/y/z.csv \
         --html x/y/z.html \
         --excl x/y/z.csv \
-        --vars <list of variables>, as is or in .txt file \
+        --vars <list of variables>, in .txt file \
         --out <directory name> x1\y1 \
         #### (optionally)
         --baseline_only True\False (default=True)\
         --remove_missing True\False \
-        --filter <list of conditions on variables in vars>, as is or in .txt file \
+        --filter <list of conditions on variables in vars>, in .txt file \
         --aver_visits True\False \
         --cov_corr True\False &
         
