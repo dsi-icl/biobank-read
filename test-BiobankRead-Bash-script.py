@@ -412,7 +412,8 @@ variables = ['Encoded anonymised participant ID',
 # ----> SET SOMETHING HERE!
 # Set the script to test here
 scriptList = ['extract_variables.py', 'extract_death.py', 'extract_SR.py', 'HES_extract.py']
-scriptnum = 3
+scriptdic = {'VAR' : 0, 'DEATH' : 1, 'SR' : 2, 'HES' : 3}
+scriptnum = scriptdic['HES']
 
 # The name of the script to test
 scriptname = scriptList[scriptnum];
@@ -443,6 +444,8 @@ if scriptname == 'extract_variables.py':
                 ' --remove_outliers True', 
                 ' --baseline_only False', 
                 ' --excl '+exclpath,
+                ' --cov_corr True', 
+                ' --aver_visits False', 
                 ' --out ' + outname]
 elif scriptname == 'extract_death.py':
     # Data file for codes or use list e.g. ' --codes C34  C42'
@@ -471,7 +474,7 @@ elif scriptname == 'HES_extract.py':
     # Data file for codes or use list e.g. ' --codes C34  C42'
     codespath = 'H:\\IC-Stuff\\software\\Biobank\\codes.txt'
     # ICD9, ICD10, OPCS
-    codetype = 'ICD9'
+    codetype = 'ICD10'
     # epistart or admidate
     datetype = 'epistart'
     # Command string

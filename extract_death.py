@@ -58,7 +58,7 @@ args.primary=True
 args.secondary=True
 ###################
 
-def getcodes(args):
+def getcodes(UKBr, args):
     #argnames = vars(args)
     #codes = argnames['codes'][0]
     codes = args.codes
@@ -68,8 +68,8 @@ def getcodes(args):
     print Codes
     return Codes
 
-def count_codes(df,args):
-    tmp1=getcodes(args)
+def count_codes(UKBr, df,args):
+    tmp1=getcodes(UKBr, args)
     ids = list(set(df['eid'].tolist()))
     cols = ['eid']+tmp1
     df_new=pd.DataFrame(columns=cols)
@@ -111,7 +111,7 @@ def rename_cols_death(df):
         df.rename(columns={c: x},inplace=True)
     return df
 
-def extractdeath(args):
+def extractdeath(UKBr, args):
     All_vars = UKBr.Vars
     if args.secondary and args.primary:
         SR = [x for x in All_vars if 'of death: ICD10' in str(x)]
@@ -122,7 +122,7 @@ def extractdeath(args):
         dead_df = UKBr.extract_variable(SR[0],baseline_only=False, dropNaN=True)
     dead_df.dropna(axis=0,how='all',subset=dead_df.columns[1::],inplace=True)
     if args.codes[0] != 'All':
-        dead_df = count_codes(dead_df,args)
+        dead_df = count_codes(UKBr, dead_df,args)
         dead_df['all_cause'] = dead_df[dead_df.columns[1::]].sum(axis=1)
         dead_df=dead_df[dead_df.all_cause !=0]
     else:
@@ -130,7 +130,7 @@ def extractdeath(args):
         dead_df=rename_cols_death(dead_df)
     return dead_df
 
-def dates_died(df):
+def dates_died(UKBr, df):
     dates=['Date of death','Age at death']
     dates_df = UKBr.extract_many_vars(dates,baseline_only=False, dropNaN=True)
     dates = [x for x in dates_df.columns.tolist()[1::] if 'Date' in x]
@@ -153,17 +153,18 @@ if __name__ == '__main__':
     # sys.path.append('D:\new place\Postdoc\python\BiobankRead-Bash')
     # Note some issues with case of directory names on different systems
     try:
-        import biobankRead2.BiobankRead2 as UKBr
-        UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
+        import biobankRead2.BiobankRead2 as UKBr2
+        UKBr = UKBr2.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
         print("BBr loaded successfully")
     except:
         try:
-            import BiobankRead2.BiobankRead2 as UKBr
-            UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
+            import BiobankRead2.BiobankRead2 as UKBr2
+            UKBr = UKBr2.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
             print("BBr loaded successfully")
         except:
             raise ImportError('UKBr could not be loaded properly')
-    Df = extractdeath(args)
-    Df = dates_died(Df)
+    Df = extractdeath(UKBr, args)
+    Df = dates_died(UKBr, Df)
     final_name = args.out+'.csv'
+    print("Outputting to", final_name)
     Df.to_csv(final_name,sep=',',index=None)

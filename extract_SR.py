@@ -7,10 +7,6 @@ Created on Mon Jun  4 17:47:20 2018
 
 import argparse
 import pandas as pd
-import numpy as np
-import warnings
-import re
-import sys
 
 '''Example run:
     python extract_SR.py \
@@ -47,7 +43,7 @@ options = parser.add_argument_group(title="Optional input", description="Apply s
 options.add_argument("--baseline_only", type=str2bool, nargs='?', const=True, default=True,  help="Only keep data from baseline assessment centre")
 options.add_argument("--excl", metavar="{File5}", type=str, default=None, help='Specify the csv file of EIDs to be excluded.')
 
-def num_codes(args):
+def num_codes(UKBr, args):
     if type(args.disease) is str:
         tmp=UKBr.find_SR_codes(select=args.disease,cancer=args.SRcancer)
     elif type(args.disease) is list:
@@ -66,7 +62,17 @@ def first_visit(df):
     cols_1st = [x for x in df.columns.tolist() if '0.' in x]
     return cols_1st
 
-def extract_SR_stuff(args):
+def extract_SR_stuff(UKBr, args):
+    """
+    Return a data-frame of Self-Reported cases
+    
+    Args:
+        UKBr
+        args
+    Returns:
+        SR_df: a dataframe containing self-reported cases
+    
+    """
     All_vars = UKBr.Vars
     if args.SRcancer:
         SR = [x for x in All_vars if 'Cancer code, self-reported' in str(x)]
@@ -74,13 +80,13 @@ def extract_SR_stuff(args):
         SR = [x for x in All_vars if 'Non-cancer illness code, self-reported' in str(x)]
     SR_df = UKBr.extract_variable(SR[0], baseline_only=args.baseline_only)
     SR_df.dropna(axis=0,how='all',subset=SR_df.columns[1::],inplace=True)
-    SR_df=count_codes(SR_df,args)
+    SR_df=count_codes(UKBr, SR_df,args)
     SR_df['all'] = SR_df[SR_df.columns[1::]].sum(axis=1)
     SR_df=SR_df[SR_df['all'] !=0]
     return SR_df
 
-def count_codes(df,args):
-    tmp1=num_codes(args)
+def count_codes(UKBr, df,args):
+    tmp1=num_codes(UKBr, args)
     ids = list(set(df['eid'].tolist()))
     cols = ['eid']+[str(x) for x in tmp1]
     df_new=pd.DataFrame(columns=cols)
@@ -129,17 +135,18 @@ if __name__ == '__main__':
     # sys.path.append('D:\new place\Postdoc\python\BiobankRead-Bash')
     # Note some issues with case of directory names on different systems
     try:
-        import biobankRead2.BiobankRead2 as UKBr
-        UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
+        import biobankRead2.BiobankRead2 as UKBr2
+        UKBr = UKBr2.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
         print("BBr loaded successfully")
     except:
         try:
-            import BiobankRead2.BiobankRead2 as UKBr
-            UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
+            import BiobankRead2.BiobankRead2 as UKBr2
+            UKBr = UKBr2.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
             print("BBr loaded successfully")
         except:
             raise ImportError('UKBr could not be loaded properly')
-    SR_df = extract_SR_stuff(args)
+    SR_df = extract_SR_stuff(UKBr, args)
     #optional but nicer
     final_name = args.out+'.csv'
+    print("Outputting to", final_name)
     SR_df.to_csv(final_name,sep=',',index=None)

@@ -81,7 +81,7 @@ def whitespace_search(smth,lst):
     return res
 
 
-def actual_vars(smth):
+def actual_vars(UKBr, smth):
     '''to use with :
         args.vars
         args.remove_missing if  > 1
@@ -99,23 +99,22 @@ def actual_vars(smth):
             ValueError('Variables need to be strings')
             return None
         if ' ' in V: 
-	    res = whitespace_search(V,All)
-            print(res)
-	else:
+            res = whitespace_search(V,All)
+        else:
             res = [x for x in All if V in x]
-            print(res) 
-	for i in res:
+        for i in res:
             actual_vars_list.append(i)
-        if len(actual_vars_list)==0: 
-            ValueError('Variables names wrong. Go back to app documents and double-check what you actually have')
-            return None
+    if len(actual_vars_list)==0: 
+        ValueError('Variables names wrong. Go back to app documents and double-check what you actually have')
+        return None
     actual_vars_list=list(set(actual_vars_list))
     return actual_vars_list
    
-def bad_chars(df):
+def bad_chars(UKBr, df):
     ''' Remove bad chars from Df column names '''
+    special_char = UKBr.special_char
     for c in df.columns.tolist()[1::]:
-        res =list(set(c) & set(UKBr.special_char))
+        res =list(set(c) & set(special_char))
         if len(res)>0:
             C=c
             for u in res:
@@ -123,23 +122,23 @@ def bad_chars(df):
             df.rename(columns={c: C},inplace=True)
     return df
 
-def remove(Df,args):
+def remove(UKBr, Df,args):
     if args.remove_missing:
         Df.replace(to_replace=-7,value=np.nan,inplace=True)
         Df.replace(to_replace=-3,value=np.nan,inplace=True)
         Df.dropna(inplace=True)
     else:
-        vars_missing = actual_vars(args.remove_missing).tolist()
+        vars_missing = actual_vars(UKBr, args.remove_missing).tolist()
         Df.replace(to_replace=-7,value=np.nan,subset=vars_missing,inplace=True)
         Df.replace(to_replace=-3,value=np.nan,subset=vars_missing,inplace=True)
         Df.dropna(subset=args.remove_missing,inplace=True)
     return Df
 
-def average_visits(Df,args):
+def average_visits(UKBr, Df,args):
     if type(args.aver_visits) == list:
-        var_names = actual_vars(args.aver_visits)
+        var_names = actual_vars(UKBr, args.aver_visits)
     else:
-        var_names = actual_vars(args.vars)
+        var_names = actual_vars(UKBr, args.vars)
         
     types=[]
     for v in var_names:
@@ -156,22 +155,22 @@ def average_visits(Df,args):
         if len(cols)==1:
             warnings.warn('Only one entry for variable '+str(Y)+'. Mean is redundant but OK')
         cols = ['eid']+cols ### this first
-        df_sub = bad_chars(Df[cols])
+        df_sub = bad_chars(UKBr, Df[cols])
         Df_tmnp=UKBr.Mean_per_visit(df=df_sub)
     Df = pd.merge(Df,Df_tmnp,on='eid')
     return Df
 
-def outliers(Df,args):
+def outliers(UKBr, Df, args):
     ''' Remove outliers from cont variables'''
-    print args.remove_outliers
-    if type(args.remove_outliers) == list:
-        var_names = actual_vars(args.remove_outliers[2::])
+    onesided=False
+    if (type(args.remove_outliers) == list) and (len(args.remove_outliers) > 2):
+        var_names = actual_vars(UKBr, args.remove_outliers[2::])
         std = args.remove_outliers[0]
-        onesided = args.remove_outliers[1]
+        if len(args.remove_outliers) > 1:
+            onesided = args.remove_outliers[1]
     else:
-        var_names = actual_vars(args.vars)
+        var_names = actual_vars(UKBr, args.vars)
         std=4
-        onesided=False
     types=[]
     for v in var_names:
         t=UKBr.variable_type(v)
@@ -210,24 +209,37 @@ def filter_vars(df,args):
             df = df[eval('df["'+str(y)+'"]'+df_sub["conds"].loc[i])]
     return df
 
-def extract_the_things(args):
-    print args.vars
+def extract_the_things(UKBr, args):
+    """
+    Extract variables, apply options, return data-frame.
+    
+    Args:
+    UKBr = UkBiobankRead class instance
+    args = command-line args, specifically
+            args.remove_missing
+            args.remove_outliers
+            args.aver_visits
+            args.filter
+            
+    Returns:
+    Df = data-frame
+    
+    """
     if UKBr.is_doc(args.vars[0]):
         args.vars=UKBr.read_basic_doc(args.vars[0])
     if args.baseline_only:
         print('Baseline visit data only')
-    stuff=actual_vars(args.vars)
-    print(stuff)
+    stuff=actual_vars(UKBr, args.vars)
     Df = UKBr.extract_many_vars(stuff,baseline_only=args.baseline_only)
     if args.remove_missing:
         print('Remove all values marked as "nan", "-3" and "-7"')
-        Df = remove(Df,args)
+        Df = remove(UKBr, Df,args)
     if args.remove_outliers:
         print('Remove outliers for cont variables')
-        Df = outliers(Df,args)
+        Df = outliers(UKBr, Df,args)
     if args.aver_visits:
         print('Compute visit mean for cont variables')
-        Df = average_visits(Df,args)
+        Df = average_visits(UKBr, Df,args)
     if args.filter:
         print('Filter variables based on condition')
         if UKBr.is_doc(args.filter):
@@ -236,7 +248,7 @@ def extract_the_things(args):
     return Df
 
 
-def float_to_cat(df):
+def float_to_cat(UKBr, df):
     var = df.columns.tolist()[1::]
     var = [x.split('_')[0] for x in var]
     types=lambda t: UKBr.variable_type(t)
@@ -285,11 +297,8 @@ def produce_plots(df,args):
 #args.csv='D:\UkBiobank\Application 10035\\21204\ukb21204.csv'
 #args.cov_corr=False
 #####
-import sys
 if __name__ == '__main__':
     args = parser.parse_args()
-    if args.remove_outliers[0] == True:
-        args.remove_outliers = True
     namehtml=args.html
     namecsv=args.csv
     nameexcl = args.excl
@@ -297,25 +306,25 @@ if __name__ == '__main__':
     # sys.path.append('D:\new place\Postdoc\python\BiobankRead-Bash')
     # Note some issues with case of directory names on different systems
     try:
-        import biobankRead2.BiobankRead2 as UKBr
-        UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
+        import biobankRead2.BiobankRead2 as UKBr2
+        UKBr = UKBr2.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
         print("BBr loaded successfully")
     except:
         try:
-            import BiobankRead2.BiobankRead2 as UKBr
-            UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
+            import BiobankRead2.BiobankRead2 as UKBr2
+            UKBr = UKBr2.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
             print("BBr loaded successfully")
         except:
             raise ImportError('UKBr could not be loaded properly')
-    Df=extract_the_things(args)
-    Df=float_to_cat(Df)
+    Df=extract_the_things(UKBr, args)
+    Df=float_to_cat(UKBr, Df)
     final_name = args.out+'.csv'
+    print("Outputting to", final_name)
     Df.to_csv(final_name,sep=',',index=None)
 #    except Exception as e:
 #        logging.error(e,exc_info=True)
 #        logging.info('Script did not work')
     if args.cov_corr:
         import seaborn as sns
-        import matplotlib.pyplot as plt
         print('produce covariance/corr of variables in nice plots')
         produce_plots(Df,args)

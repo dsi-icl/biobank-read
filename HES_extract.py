@@ -6,8 +6,6 @@ Created on Tue May  8 17:53:41 2018
 
 import argparse
 import pandas as pd
-import numpy as np
-import warnings
 import re
 
 '''Example run:
@@ -36,19 +34,19 @@ options.add_argument("--excl", metavar="{File5}", type=str, default=None, help='
 
 
 ###################
-def getcodes(args):
+def getcodes(UKBr, args):
     if UKBr.is_doc(args.codes[0]):
         Codes=UKBr.read_basic_doc(args.codes[0])
     else:
         Codes = args.codes
     return Codes
 
-def extract_disease_codes(Df,args):
-    HFs=getcodes(args)
+def extract_disease_codes(UKBr, Df,args):
+    HFs=getcodes(UKBr, args)
     ## get all associated codes ##
     Codes = UKBr.find_ICD10_codes(select=HFs)
     df = UKBr.HES_code_match(df=Df, icds=Codes, which=args.codeType)
-    df_new = count_codes(df,args)
+    df_new = count_codes(UKBr, df,args)
     if args.firstvisit:
         print('Marking 1st ever and latest visits')
         date = args.dateType
@@ -67,7 +65,7 @@ def extract_disease_codes(Df,args):
         df_new = pd.merge(df_new,df3,on=['eid'],how='outer')
     return df_new
 
-def count_codes(df,args):
+def count_codes(UKBr, df,args):
     code_conv = re.match('ICD(\d+)',args.codeType).group(1)
     tmp1=list(set(df['diag_icd'+code_conv].tolist()))
     ids = list(set(df['eid'].tolist()))
@@ -109,21 +107,22 @@ if __name__ == '__main__':
     ### import Biobankread package
     # sys.path.append('D:\new place\Postdoc\python\BiobankRead-Bash')
     try:
-        import biobankRead2.BiobankRead2 as UKBr
-        UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
+        import biobankRead2.BiobankRead2 as UKBr2
+        UKBr = UKBr2.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
         print("BBr loaded successfully")
     except:
         try:
-            import BiobankRead2.BiobankRead2 as UKBr
-            UKBr = UKBr.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
+            import BiobankRead2.BiobankRead2 as UKBr2
+            UKBr = UKBr2.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
             print("BBr loaded successfully")
         except:
             raise ImportError('UKBr could not be loaded properly')
     HES_records=UKBr.HES_tsv_read(filename=nametsv)
-    HES_df = extract_disease_codes(HES_records,args)
+    HES_df = extract_disease_codes(UKBr, HES_records,args)
 
 
     #optional but nicer
     final_name = args.out+'.csv'
+    print("Outputting to", final_name)
     HES_df.to_csv(final_name,sep=',',index=None)
     
