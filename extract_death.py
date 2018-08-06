@@ -65,7 +65,6 @@ def getcodes(UKBr, args):
     if UKBr.is_doc(codes[0]):
         Codes=UKBr.read_basic_doc(codes[0])
     Codes = UKBr.find_ICD10_codes(select=Codes)
-    print Codes
     return Codes
 
 def count_codes(UKBr, df,args):

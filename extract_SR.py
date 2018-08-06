@@ -69,9 +69,9 @@ def extract_SR_stuff(UKBr, args):
     Args:
         UKBr
         args
+        
     Returns:
         SR_df: a dataframe containing self-reported cases
-    
     """
     All_vars = UKBr.Vars
     if args.SRcancer:
@@ -146,7 +146,7 @@ if __name__ == '__main__':
         except:
             raise ImportError('UKBr could not be loaded properly')
     SR_df = extract_SR_stuff(UKBr, args)
-    #optional but nicer
+    # Optional but nicer
     final_name = args.out+'.csv'
     print("Outputting to", final_name)
     SR_df.to_csv(final_name,sep=',',index=None)

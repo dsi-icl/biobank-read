@@ -818,10 +818,17 @@ class BiobankRead():
            return sub_HES
 
     def find_ICD10_codes(self,select=None):
-        ## extract ICD10 codes from a large, complete dictionary of ICD10 codes
-        ##          of all diseases known to medicine
-        ## input: select - general code for one class of deseases
-        ## output: icd10 - codes of all deseases associated with class
+        # extract ICD10 codes from a large, complete dictionary of ICD10 codes
+        #          of all diseases known to medicine
+        #
+        # https://en.wikipedia.org/wiki/ICD-10
+        #
+        # input: select - general code for one class of deseases
+        # output: icd10 - codes of all deseases associated with class
+        #
+        # e.g. select = 'C49' (Malignant neoplasm of other connective and soft tissue)
+        # returns ['C49', 'C490', 'C491', 'C492', 'C493', 'C494', 'C495', 'C496', 'C498', 'C499']
+        # which constitute the original disease class and all the subclasses
         tmp = self.HES_tsv_read(self.DATA_PATH)
         codes_all = tmp['coding'].tolist()
         icd10 = []
@@ -856,7 +863,7 @@ class BiobankRead():
          
     def HES_code_match(self,df=None,icds=None,which='ICD10'):
         # find input ICDs & OPCS codes in specified columns from input HES data frame
-        # USe only on'HES' extrated directly from HES.tsv file
+        # USe only on'HES' extracted directly from HES.tsv file
         # which: 'diagnosis', 'oper4' or 'diag_icd9'
         if type(icds) is pd.core.series.Series:
             icds = icds.tolist()

@@ -44,8 +44,10 @@ This data can be accessed through the portal_ in the following pathway: "Data Co
 ################################
 Installation
 ################################
-Simply Download the files and run from the command line -- in the correct syntaxt. You must have the following installed to execute the files:
+Simply Download the files and run from the command line -- in the correct syntax. 
+First add the full path to BiobankRead-Bash to your PYTHONPATH environment variable.
 
+You must have the following installed to execute the files:
 - Python 3.6 or later
 - Pandas
 - BeautifulSoup4

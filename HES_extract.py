@@ -9,7 +9,15 @@ import pandas as pd
 import re
 
 '''Example run:
-    python HES_extract.py \
+    python HES_extract.py 
+    --csv  ukb21204.csv  
+    --html ukb21204.html 
+    --tsv ukb.tsv 
+    --codes C49 
+    --codeType ICD10 
+    --baseline True 
+    --dateType epistart 
+    --out test
 '''
 
 parser = argparse.ArgumentParser(description="\n BiobankRead HES_extract. Extracts data from HES records as made available within UKB")
@@ -30,9 +38,6 @@ options.add_argument("--firstvisit",default=True,type=bool,help="Mark earliest/l
 options.add_argument("--baseline",default=True,type=bool,nargs='+',help="Mark visits before and after baseline assessment ")
 options.add_argument("--excl", metavar="{File5}", type=str, default=None, help='Specify the csv file of EIDs to be excluded.')
 
-
-
-
 ###################
 def getcodes(UKBr, args):
     if UKBr.is_doc(args.codes[0]):
@@ -41,10 +46,15 @@ def getcodes(UKBr, args):
         Codes = args.codes
     return Codes
 
-def extract_disease_codes(UKBr, Df,args):
+def extract_disease_codes(UKBr, Df, args):
+    # Get the codes either directly from args.codes or from a file
     HFs=getcodes(UKBr, args)
-    ## get all associated codes ##
-    Codes = UKBr.find_ICD10_codes(select=HFs)
+    ## get all associated ICD10 codes ##
+    if args.codeType == 'ICD10':
+        Codes = UKBr.find_ICD10_codes(select=HFs)
+    else:
+        Codes = UKBr.find_ICD9_codes(select=HFs)
+    # Get dataframe of those subjects which match any of the extracted codes
     df = UKBr.HES_code_match(df=Df, icds=Codes, which=args.codeType)
     df_new = count_codes(UKBr, df,args)
     if args.firstvisit:
@@ -57,27 +67,44 @@ def extract_disease_codes(UKBr, Df,args):
         df_ass=UKBr.Get_ass_dates()
         df_ass=df_ass[df_ass.columns[0:2]]
         df_ass.rename(columns={df_ass.columns[1]: 'assess_date'},inplace=True)
+        # After
         df2=UKBr.HES_after_assess(df=df,assess_dates=df_ass,date=date)
         df_sub=UKBr.HES_first_last_time(df,date)
         df_sub=pd.merge(df_sub,df_ass,on='eid')
+        # Before (just a binary flag)
         df3=UKBr.HES_before_assess(df_sub)
-        df_new =pd.merge(df_new,df2,on=['eid'],how='outer')
+        df_new = pd.merge(df_new,df2,on=['eid'],how='outer')
         df_new = pd.merge(df_new,df3,on=['eid'],how='outer')
     return df_new
 
-def count_codes(UKBr, df,args):
+def count_codes(UKBr, df, args):
+    """
+    Args:
+        df = data frame of UKBB subjects who matched an ICD10 HES code search.
+        
+    """
+    # e.g. code_conv = 10
     code_conv = re.match('ICD(\d+)',args.codeType).group(1)
+    # e.g. tmp1 = ['C498', 'C499', 'C496', 'C494', 'C495', 'C492', 'C493', 'C490', 'C491']
     tmp1=list(set(df['diag_icd'+code_conv].tolist()))
+    # All the patient ids
     ids = list(set(df['eid'].tolist()))
+    # e.g. cols = ['eid', 'C498', 'C499', 'C496', 'C494', 'C495', 'C492', 'C493', 'C490', 'C491']
     cols = ['eid']+tmp1
     df_new=pd.DataFrame(columns=cols)
     j=0
     for i in ids:
+        # Get the current id
         df_sub=df[df['eid']==i]
+        # ICD10 codes belonging to this subject
         tmp2=list(set(df_sub['diag_icd'+code_conv].tolist()))
+        # Codes which match the search list
         res = [x in tmp2 for x in tmp1]
+        # Flag for each code present
         res = [1*(x>0) for x in res]
+        # Create data frame row for this subject
         res = [i]+res
+        # Insert in data-frame
         df_new.loc[j]=res
         j += 1
     return df_new
@@ -117,11 +144,14 @@ if __name__ == '__main__':
             print("BBr loaded successfully")
         except:
             raise ImportError('UKBr could not be loaded properly')
+            
+    # Read the HES data-file
     HES_records=UKBr.HES_tsv_read(filename=nametsv)
+    
+    # Find matching disease codes
     HES_df = extract_disease_codes(UKBr, HES_records,args)
 
-
-    #optional but nicer
+    # Optional but nicer
     final_name = args.out+'.csv'
     print("Outputting to", final_name)
     HES_df.to_csv(final_name,sep=',',index=None)
