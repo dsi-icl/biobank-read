@@ -183,8 +183,7 @@ def outliers(UKBr, Df, args):
     stuff=df_temp['vars'].tolist()
     Df2=pd.DataFrame(data=Df['eid'])
     for Y in stuff:
-        cols = [x for x in Df.columns.tolist() if Y in x]
-        cols = ['eid']+cols ### this first
+        cols = ['eid'] + [x for x in Df.columns.tolist() if Y in x]
         Df2=UKBr.remove_outliers(df=Df,cols=cols,lim=std,one_sided=onesided) 
     return Df2
 

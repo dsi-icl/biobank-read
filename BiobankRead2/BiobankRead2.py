@@ -570,8 +570,8 @@ class BiobankRead():
     
     def rename_conf(self, df=None):
         # rename columns of confounders df with sensible stuff
-    ###### 21-03-2018 : 
-            #### keep this function? 
+        ###### 21-03-2018 : 
+        #### keep this function? 
         names_in = df.columns.tolist()
         names_out = []
         for n in names_in:
@@ -754,7 +754,7 @@ class BiobankRead():
         new_df = pd.DataFrame(columns=cols)
         new_df['eid'] = df['eid']
         for col in cols:
-            res_tmp1 =[ x==key for x in df[col]]
+            res_tmp1 = [x==key for x in df[col]]
             new_df[col]=res_tmp1
         new_df2 = pd.DataFrame(columns=['eid',name])
         new_df2[name] = new_df[cols].sum(axis=1)
@@ -803,7 +803,7 @@ class BiobankRead():
         SR_cancer = list(set(SR_cancer))
         return SR_cancer
 ###################################################################################
- ################## HES data extraction + manipulation ##############################
+################## HES data extraction + manipulation ##############################
 ###################################################################################
      
     def HES_tsv_read(self,filename=None,var='All',n=None):
@@ -876,12 +876,13 @@ class BiobankRead():
             print(' (HES_code_match) unrecognised diagnosis code')
             return None
         icd = whichdict[which]
-        new_df = pd.DataFrame(columns=cols)
-        new_df['eid'] = df['eid']
+        # Get all the ICD10 diagnosis codes
         df_mini = df[icd].tolist()
         #print df_mini
-        res_tmp =[ x in icds for x in df_mini]
-        new_df_2 = df[res_tmp]
+        #res_tmp =[ x in icds for x in df_mini]
+        #new_df_2 = df[res_tmp]
+        new_df_2 = df.isin(df_mini)
+        new_df_2['eid'] = df['eid']
         return new_df_2
             
         
@@ -898,16 +899,20 @@ class BiobankRead():
         if type(icds) is pd.core.series.Series:
             icds = icds.tolist()
         icds = [int(x) for x in icds if str(x) != 'nan']
+        # if columns not specified use all columns except eids
         if cols is None:
             cols = df.columns.tolist()
             # remove eids
             cols = cols[1::]
-        new_df = pd.DataFrame(columns=cols)
-        new_df['eid'] = df['eid']
+        #new_df = pd.DataFrame(columns=cols)
+        #new_df['eid'] = df['eid']
         df = df.replace(np.nan,' ', regex=True)
-        for col in cols:
-            res_tmp1 =[ x in icds for x in df[col]]
-            new_df[col]=res_tmp1
+        new_df = df.isin(icds)
+        new_df.insert(0, 'eid', df['eid'])
+        #Replaced by Pandas function isin above
+        #for col in cols:
+        #    res_tmp1 =[ x in icds for x in df[col]]
+        #    new_df[col]=res_tmp1
         new_df2 = pd.DataFrame(columns=['eid','SR_res'])
         new_df2['SR_res'] = new_df[cols].sum(axis=1)
         new_df2['eid'] = df['eid']
@@ -923,12 +928,15 @@ class BiobankRead():
             cols = df.columns.tolist()
             # remove eids
             cols = cols[1::]
-        new_df = pd.DataFrame(columns=cols)
-        new_df['eid'] = df['eid']
+        #new_df = pd.DataFrame(columns=cols)
+        #new_df['eid'] = df['eid']
         df = df.replace(np.nan,' ', regex=True)
-        for col in cols:
-            res_tmp1 =[ x in icds for x in df[col]]
-            new_df[col]=res_tmp1
+        new_df = df.isin(icds)
+        new_df.insert(0, 'eid', df['eid'])
+        #Replaced by Pandas function isin above
+        #for col in cols:
+        #    res_tmp1 =[ x in icds for x in df[col]]
+        #    new_df[col]=res_tmp1
         new_df2 = pd.DataFrame(columns=['eid','ICD_res'])
         new_df2['ICD_res'] = new_df[cols].sum(axis=1)
         new_df2['eid'] = df['eid']
@@ -979,8 +987,8 @@ class BiobankRead():
         DF = pd.DataFrame(columns=['eid','Before'])
         DF['eid'] = dates['eid']
         assess_date = dates['assess_date'].tolist()
-        res=[a>b for (a,b) in zip(assess_date,dates['first_admidate'].tolist())]
-        res = [1*(x>0) for x in res]
+        admit_date  = dates['first_admidate'].tolist()
+        res=[int(asd>add) for (asd,add) in zip(assess_date,admit_date)]
         DF['Before'] = res
         return DF
     

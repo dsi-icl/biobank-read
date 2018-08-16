@@ -48,6 +48,7 @@ def getcodes(UKBr, args):
 
 def extract_disease_codes(UKBr, Df, args):
     # Get the codes either directly from args.codes or from a file
+    # Df = HES dataframe
     HFs=getcodes(UKBr, args)
     ## get all associated ICD10 codes ##
     if args.codeType == 'ICD10':
@@ -85,25 +86,22 @@ def count_codes(UKBr, df, args):
     """
     # e.g. code_conv = 10
     code_conv = re.match('ICD(\d+)',args.codeType).group(1)
+    code_str = 'diag_icd'+code_conv
     # e.g. tmp1 = ['C498', 'C499', 'C496', 'C494', 'C495', 'C492', 'C493', 'C490', 'C491']
-    tmp1=list(set(df['diag_icd'+code_conv].tolist()))
+    codes_list=list(set(df['diag_icd'+code_conv].tolist()))
     # All the patient ids
     ids = list(set(df['eid'].tolist()))
     # e.g. cols = ['eid', 'C498', 'C499', 'C496', 'C494', 'C495', 'C492', 'C493', 'C490', 'C491']
-    cols = ['eid']+tmp1
+    cols = ['eid']+codes_list
     df_new=pd.DataFrame(columns=cols)
     j=0
     for i in ids:
         # Get the current id
         df_sub=df[df['eid']==i]
         # ICD10 codes belonging to this subject
-        tmp2=list(set(df_sub['diag_icd'+code_conv].tolist()))
+        codes_this=list(set(df_sub[code_str].tolist()))
         # Codes which match the search list
-        res = [x in tmp2 for x in tmp1]
-        # Flag for each code present
-        res = [1*(x>0) for x in res]
-        # Create data frame row for this subject
-        res = [i]+res
+        res = [i]+[int(x in codes_this) for x in codes_list]
         # Insert in data-frame
         df_new.loc[j]=res
         j += 1

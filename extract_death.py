@@ -68,9 +68,9 @@ def getcodes(UKBr, args):
     return Codes
 
 def count_codes(UKBr, df,args):
-    tmp1=getcodes(UKBr, args)
+    codes_list=getcodes(UKBr, args)
     ids = list(set(df['eid'].tolist()))
-    cols = ['eid']+tmp1
+    cols = ['eid']+codes_list
     df_new=pd.DataFrame(columns=cols)
     j=0
     # Loop over eids
@@ -78,13 +78,11 @@ def count_codes(UKBr, df,args):
         # Select this eid
         df_sub=df[df['eid']==i]
         # tmp2 = data columns for this eid
-        tmp2=list(df_sub.iloc[0][1:len(df_sub.columns)-1])
+        codes_this=list(df_sub.iloc[0][1:len(df_sub.columns)-1])
         # Get columns with matching codes as Boolean vector
         # Note - C34 also matches C340 C341 etc
-        # Is this intended?
-        res = [x in tmp2 for x in tmp1]
-        res = [int(x) for x in res]
-        res = [i]+res
+        # Is this intended? YES
+        res = [i]+[int(x in codes_this) for x in codes_list]
         df_new.loc[j]=res
         j += 1
     return df_new

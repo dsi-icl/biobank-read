@@ -413,7 +413,7 @@ variables = ['Encoded anonymised participant ID',
 # Set the script to test here
 scriptList = ['extract_variables.py', 'extract_death.py', 'extract_SR.py', 'HES_extract.py']
 scriptdic = {'VAR' : 0, 'DEATH' : 1, 'SR' : 2, 'HES' : 3}
-scriptnum = scriptdic['HES']
+scriptnum = scriptdic['DEATH']
 
 # The name of the script to test
 scriptname = scriptList[scriptnum];
@@ -426,7 +426,7 @@ exclpath =  'Z:\\EABOAGYE\\Users\\wcrum\\Projects\\UKBB\\UKBB-data-2018\\w10035_
 hespath = 'Z:\\EABOAGYE\\Users\\wcrum\\Projects\\UKBB\\UKBB-data-2018\\ukb.tsv'
 
 # Output
-outname = 'test';
+outname = 'testnewDEATH';
 
 # Construct script path and arguments for each script
 if scriptname == 'extract_variables.py':
