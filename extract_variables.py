@@ -189,7 +189,7 @@ def outliers(UKBr, Df, args):
 
 def filter_vars(df,args):
     df_sub=pd.DataFrame(columns={'Vars','conds'})
-    for cond in  args.filter:
+    for cond in args.filter:
         match=re.search('([a-zA-Z0-9\s]+)(\S{1,2}\d+)',cond)
         thevar=match.group(1)
         condition=match.group(2)

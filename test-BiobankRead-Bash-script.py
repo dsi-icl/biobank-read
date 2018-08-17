@@ -5,6 +5,7 @@ Created on Mon May 21 14:38:15 2018
 @author: wcrum
 """
 
+import os
 import subprocess
 import sys
 
@@ -413,7 +414,7 @@ variables = ['Encoded anonymised participant ID',
 # Set the script to test here
 scriptList = ['extract_variables.py', 'extract_death.py', 'extract_SR.py', 'HES_extract.py']
 scriptdic = {'VAR' : 0, 'DEATH' : 1, 'SR' : 2, 'HES' : 3}
-scriptnum = scriptdic['DEATH']
+scriptnum = scriptdic['VAR']
 
 # The name of the script to test
 scriptname = scriptList[scriptnum];
@@ -426,7 +427,9 @@ exclpath =  'Z:\\EABOAGYE\\Users\\wcrum\\Projects\\UKBB\\UKBB-data-2018\\w10035_
 hespath = 'Z:\\EABOAGYE\\Users\\wcrum\\Projects\\UKBB\\UKBB-data-2018\\ukb.tsv'
 
 # Output
-outname = 'testnewDEATH';
+outpath = 'H:\\IC-Stuff\\software\\Biobank'
+outname = 'testnewVAR'
+outfile = os.path.join(outpath, outname)
 
 # Construct script path and arguments for each script
 if scriptname == 'extract_variables.py':
@@ -446,7 +449,7 @@ if scriptname == 'extract_variables.py':
                 ' --excl '+exclpath,
                 ' --cov_corr True', 
                 ' --aver_visits False', 
-                ' --out ' + outname]
+                ' --out ' + outfile]
 elif scriptname == 'extract_death.py':
     # Data file for codes or use list e.g. ' --codes C34  C42'
     codespath = 'H:\\IC-Stuff\\software\\Biobank\\codes.txt'
@@ -458,7 +461,7 @@ elif scriptname == 'extract_death.py':
                 ' --primary True', 
                 ' --secondary False',
                 ' --excl '+exclpath,
-                ' --out ' + outname]
+                ' --out ' + outfile]
 elif scriptname == 'extract_SR.py':
     # Command string
     # Note use of "" to prevent argsparse breaking up the disease string
@@ -469,7 +472,7 @@ elif scriptname == 'extract_SR.py':
                 ' --disease "lung cancer" "breast cancer"',
                 ' --SRcancer True', 
                 ' --excl '+exclpath,
-                ' --out ' + outname]
+                ' --out ' + outfile]
 elif scriptname == 'HES_extract.py':
     # Data file for codes or use list e.g. ' --codes C34  C42'
     codespath = 'H:\\IC-Stuff\\software\\Biobank\\codes.txt'
@@ -488,7 +491,7 @@ elif scriptname == 'HES_extract.py':
                 ' --dateType '+ datetype,
                 ' --firstvisit True', 
                 ' --baseline True', 
-                ' --out ' + outname]
+                ' --out ' + outfile]
 else:
     print 'error: scriptname =', scriptname, 'not recognised'
     sys.exit(1)

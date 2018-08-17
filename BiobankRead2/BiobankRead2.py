@@ -106,6 +106,7 @@ class BiobankRead():
         self.DATA_PATH_SR_2 = os.path.join(this_dir, "data", "coding6.tsv") 
         
         # Parse html 
+        print(' Making soup')
         self.soup = self.makeSoup()
         
         #Time/date variables
@@ -116,8 +117,13 @@ class BiobankRead():
         
         # Variables in table
         # Populate by calling self.All_variables()
-        self.Vars = self.All_variables()['names']
-        self.data_types = self.All_variables()['types']
+        print(' Loading variables')
+        allvars = self.All_variables()
+        self.Vars = allvars['names']
+        self.data_types = allvars['types']
+        
+        # Variable to hold soup rows extraction
+        self.allrows = None
         
         # All EIDS
         self.Eids_all = self.GetEIDs()
@@ -151,6 +157,8 @@ class BiobankRead():
             print ' ', Nold-self.N, 'matched exclusions were made'
             if Nold > self.N:
                 print ' ', self.N, 'EIDS remain'
+
+        print('Done');
 
         # All attendance dates
         # QUERY - WHERE IS N SET?
@@ -196,32 +204,42 @@ class BiobankRead():
         allrows = self.soup.findAll('tr')
         res = []
         data_type = []
+        re_string = 'nowrap;\">(.*?)</span></td><td rowspan=\"(\d+)\">(.*?)</td></tr>'
         for t in allrows:
-            re_string = 'nowrap;\">(.*?)</span></td><td rowspan=\"(\d+)\">(.*?)</td></tr>'
             #'</span></td><td rowspan=(.*?)>(.*?)</td></tr>'
             res1=re.search(re_string,str(t))
-            if not res1 is None:
+            if res1 is not None:
                 res1 = res1.group(0)
-                ## get variable data type
+                ## get variable data type xx1 between "nowrap;\" and "</span>"
                 x1,y1,z1=res1.partition('nowrap;\">')
                 xx1,yy1,zz1=z1.partition('</span>')
                 data_type.append(xx1)
-                ## get variable name
+                ## get variable name xx between '>' and '</td></tr>'
                 x,y,z = zz1.partition('">')
                 xx,yy,zz = z.partition('</td></tr>')
-                if xx.find('<br>') > -1:
-                    t = xx.find('<br>')
+                ## check for trailing '<br>'
+                t = xx.find('<br>')
+                if t > -1:
+                    xx = xx[0:t]
+                ## check for trailing '<br/>'
+                ## NOTE - COULD PROBABLY COMBINE INTO A SINGLE TEST FOR '<br>' OR <br/>'
+                ## BUT THE ORIGINAL LOGIC ALLOWED FOR '<br><br/>' SO I'M LEAVING IT
+                t = xx.find('<br/>')
+                if t >-1:
                     xx = xx[0:t]
                 res.append(xx)
+        '''
+        # This logic now incorporated in loop above
+        # -Bill Crum
         res2 = []
         for x in res:
-            if x.find('<br/>') >-1:
-                 t = x.find('<br/>')
-                 xx = x[0:t]
-                 res2.append(xx)
+            t = x.find('<br/>')
+            if t >-1:
+                 res2.append(x[0:t])
             else:
                  res2.append(x)
         res = res2
+        '''
         return {'names':res, 'types':data_type}
     
     def GetEIDs(self, filename=None):
@@ -250,7 +268,9 @@ class BiobankRead():
         '''
         
         # extract fields 
-        allrows = self.soup.findAll('tr')
+        if self.allrows is None:
+            self.allrows = self.soup.findAll('tr')
+        allrows = self.allrows
         
         # Deal with special symbols in variable name
         symbols = BiobankRead.special_char
@@ -267,6 +287,8 @@ class BiobankRead():
         # ... <td rowspan="1">Heel ultrasound method<br> ...
         # Or this:
         # ... <td rowspan="1">Heel ultrasound method.<br> ...
+                
+                
         searchvar = '>'+variable+'(.?)<'
         userrows = [t for t in allrows if re.search(searchvar,str(t))]
         if not userrows:
@@ -290,7 +312,8 @@ class BiobankRead():
         key = ['eid']
 	  # explicit href search deprecated
         #for link in self.soup.find_all('a', href=BiobankRead.sub_link+idx):
-        for link in self.soup.find_all("a", href = re.compile("field.cgi\?id="+idx+"$")):
+        columns =  self.soup.find_all("a", href = re.compile("field.cgi\?id="+idx+"$"))
+        for link in columns:
             tmp = str(link.contents[0])#.encode('utf-8'))
             key.append(tmp) 
         everything = pd.read_csv(self.csv_file, usecols=key, nrows=self.N)
@@ -653,14 +676,15 @@ class BiobankRead():
         nvisits = 1 if baseline_only else 3
         for k in range(nvisits):
             V0 = self.vars_by_visits(col_names,k)
-            match1 = re.search('.*?(.)\d.\d',V0[0]) #
-            mychar=match1.group(1)
-            for v in V0:
-                b,k,a = v.partition(mychar)
-                if option_str:
-                    col_new.append(key+'_'+a)
-                else:
-                    col_new.append(key)
+            if len(V0) > 0:
+                match1 = re.search('.*?(.)\d.\d',V0[0]) #
+                mychar=match1.group(1)
+                for v in V0:
+                    b,k,a = v.partition(mychar)
+                    if option_str:
+                        col_new.append(key+'_'+a)
+                    else:
+                        col_new.append(key)
         df_new = pd.DataFrame(columns=col_new)
         for c in range(len(col_new)):
             df_new[col_new[c]] = df[col_names[c]]
