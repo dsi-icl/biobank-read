@@ -190,16 +190,23 @@ def outliers(UKBr, Df, args):
 def filter_vars(df,args):
     df_sub=pd.DataFrame(columns={'Vars','conds'})
     for cond in args.filter:
+        #\S{1, 2} = 1-2 non-whitespace characters
         match=re.search('([a-zA-Z0-9\s]+)(\S{1,2}\d+)',cond)
         thevar=match.group(1)
         condition=match.group(2)
+        # This adds rows under specified column headings
+        #         Vars    Conds
+        #    0    BMI     >34
+        #    1    BMI     <99
+        # etc
         df_sub=df_sub.append({'Vars':thevar,'conds':condition},ignore_index=True)
-    # sanity check #
+    # sanity check - make sure condition vars match extracted vars
     overlap=list(set(df_sub['Vars'])&set(args.vars))
     if len(overlap)==0:
         raise NameError('Conditional filtering does not match extracted variables')
-    #
+    # Select condition rows where variables have been extracted
     df_sub=df_sub[[x in overlap for x in df_sub['Vars']]]
+    # Apply filter
     for i in range(len(df_sub)):
         Ys = [x for x in df.columns.tolist() if df_sub['Vars'].loc[i] in x]
         if len(Ys)==0:
@@ -207,6 +214,48 @@ def filter_vars(df,args):
         for y in Ys:
             df = df[eval('df["'+str(y)+'"]'+df_sub["conds"].loc[i])]
     return df
+
+
+def filter_vars2(df, args):
+    '''
+    filter_vars2 applys conditions to extracted variables
+    
+    This is a rewrite of filtervars which takes advantage of the
+    pandas.dataFrame.eval functionality
+    
+    The columns of the dataframe and the names of the variables are
+    systematically renamed to remove any characters which might break
+    the query using UKBr2.BiobankRead.clean_columns
+    
+    -Bill Crum
+    '''
+    
+    # Temporarily rename columns to avoid problems with spaces
+    [dfcolorig, df.columns] = UKBr2.BiobankRead.clean_columns(df)
+    dfcol = df.columns.tolist()
+    # Deal with conditions one at a time
+    for cond in args.filter:
+        # Extract the variable and condition
+        #\S{1, 2} = 1-2 non-whitespace characters
+        match=re.search('([a-zA-Z0-9\s]+)(\S{1,2}\d+)',cond)
+        thevar=match.group(1)
+        [dummy, thevar] = UKBr2.BiobankRead.clean_columns(thevar)
+        condition=match.group(2)
+        # Get matching variables in main dataframe for this condition
+        matchvars = [x for x in dfcol if thevar in x]
+        # Apply the condition
+        for match in matchvars:
+            # Apply condition
+            thiscondition = match+condition
+            try:
+                df = df[df.eval(thiscondition)]
+            except Exception as e:
+                print('condition', thiscondition, 'not found/evaluated in dataframe')    
+                print('exception', e);
+    # Restore columns
+    df.columns = dfcolorig
+    return df
+   
 
 def extract_the_things(UKBr, args):
     """
@@ -228,6 +277,7 @@ def extract_the_things(UKBr, args):
         args.vars=UKBr.read_basic_doc(args.vars[0])
     if args.baseline_only:
         print('Baseline visit data only')
+    # Does keyword translation and returns actual variable names
     stuff=actual_vars(UKBr, args.vars)
     Df = UKBr.extract_many_vars(stuff,baseline_only=args.baseline_only)
     if args.remove_missing:
@@ -243,7 +293,7 @@ def extract_the_things(UKBr, args):
         print('Filter variables based on condition')
         if UKBr.is_doc(args.filter):
             args.filter=UKBr.read_basic_doc(args.filter)
-        Df = filter_vars(Df,args)
+        Df = filter_vars2(Df,args)
     return Df
 
 

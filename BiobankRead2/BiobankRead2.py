@@ -55,7 +55,24 @@ class BiobankRead():
     #sub_link  = 'http://biobank.ctsu.ox.ac.uk/crystal/field.cgi?id='
     #code_link = 'http://biobank.ctsu.ox.ac.uk/crystal/coding.cgi?id='
 
-    
+    @staticmethod
+    def clean_columns(df):
+        '''
+        Remove any "special_char"s in either dataframe columns or a string.
+        '''
+        if type(df) is str:
+            dforig = df
+            dfstrip = df.strip().lower()
+            for ch in BiobankRead.special_char+'. ':
+                dfstrip = dfstrip.replace(ch, '')
+        else:
+            dforig = df.columns
+            dfstrip = df.columns.str.strip().str.lower()
+            for ch in BiobankRead.special_char+'. ':
+                dfstrip = dfstrip.str.replace(ch, '')
+        return [dforig, dfstrip]        
+
+
     def __init__(self, html_file = None, csv_file = None, csv_exclude = None):
         
         if (html_file == None) or (csv_file == None):
