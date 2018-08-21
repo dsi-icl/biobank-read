@@ -434,10 +434,10 @@ outfile = os.path.join(outpath, outname)
 # Construct script path and arguments for each script
 if scriptname == 'extract_variables.py':
     # Variables and conditions
-    varList = ['"Age when attended assessment centre"', '"BMI"', '"Age high blood pressure diagnosed"']
+    varList = ['"Age when attended assessment centre"', '"Body mass index (BMI)"', '"Age high blood pressure diagnosed"']
     varString = ' '.join(varList)
     #varString = 'H:\\IC-Stuff\\software\\Biobank\\BiobankRead-Bash\\vars_test.txt'
-    filterList = ['"Age when attended assessment centre>50"', '"Age when attended assessment centre<70"', '"BMI>=23"', '"BMI<=30"']
+    filterList = ['"Age when attended assessment centre>50"', '"Age when attended assessment centre<70"', '"Body mass index (BMI)>=23"', '"Body mass index (BMI)<=30"']
     # Command string
     bbreadargs = [scriptname, 
                 ' --csv '+csvpath, 

@@ -236,8 +236,13 @@ def filter_vars2(df, args):
     # Deal with conditions one at a time
     for cond in args.filter:
         # Extract the variable and condition
-        #\S{1, 2} = 1-2 non-whitespace characters
-        match=re.search('([a-zA-Z0-9\s]+)(\S{1,2}\d+)',cond)
+        # Format is: 'variable>=number'
+        # ([^=<>]*) = string of any chars *except* =, <, >
+        # [<=>][=] = any of >, <, = followed by optional =
+        # [0-9]+ = any length string of digits 
+        # (.[0-9]+)?+) = 0 or 1 '.' + string of digits
+        match=re.search(r'([^=<>]*)([<=>][=]?[0-9]+(.[0-9]+)?)',cond)
+        #match=re.search('.*[=<>][0-9])
         thevar=match.group(1)
         [dummy, thevar] = UKBr2.BiobankRead.clean_columns(thevar)
         condition=match.group(2)
@@ -249,6 +254,7 @@ def filter_vars2(df, args):
             thiscondition = match+condition
             try:
                 df = df[df.eval(thiscondition)]
+                print('Applied condition', thiscondition)
             except Exception as e:
                 print('condition', thiscondition, 'not found/evaluated in dataframe')    
                 print('exception', e);
