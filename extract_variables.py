@@ -24,6 +24,10 @@ import re
         --filter <list of conditions on variables in vars>, as is or in .txt file \
         --aver_visits True\False \
         --cov_corr True\False \
+        --combine  inner\partial\outer (default=outer) \
+                    inner = all extracted variables valid for each eid
+                    outer = values for all eids returned
+                    partial = at least one extracted variable must be valid
 '''
 
 # Function to deal nicely with Boolean parser options
@@ -67,6 +71,7 @@ options.add_argument("--remove_missing", default=False, nargs='+', type=str,help
 options.add_argument("--remove_outliers", type=str2bool, default=False, nargs='+',action='store',help="Remove subjects with values beyond x std dev for any cont. variable. Format:[std.dev,one-sided,vars names...]")
 options.add_argument("--filter", default=False, nargs='+', metavar="{File4}",type=str,action='store',help="Filter some variables based on conditions. Keep your requests simple ")
 options.add_argument("--excl", metavar="{File5}", type=str, default=None, help='Specify the csv file of EIDs to be excluded.')
+options.add_argument("--combine", metavar="inner/partial/outer", type=str, default='outer', help='Specify how extracted variable data is combined for output.')
 
 sums = parser.add_argument_group(title="Optional request for basic summary", description="Perform mean /cov/ corr/ dist plots for the data")
 sums.add_argument("--aver_visits",default=False,type=str2boolorlist,help="get average measurement per visit")
@@ -224,8 +229,8 @@ def filter_vars2(df, args):
     pandas.dataFrame.eval functionality
     
     The columns of the dataframe and the names of the variables are
-    systematically renamed to remove any characters which might break
-    the query using UKBr2.BiobankRead.clean_columns
+    systematically renamed, to remove any characters which might break
+    the query, using UKBr2.BiobankRead.clean_columns
     
     -Bill Crum
     '''
@@ -240,7 +245,7 @@ def filter_vars2(df, args):
         # ([^=<>]*) = string of any chars *except* =, <, >
         # [<=>][=] = any of >, <, = followed by optional =
         # [0-9]+ = any length string of digits 
-        # (.[0-9]+)?+) = 0 or 1 '.' + string of digits
+        # (.[0-9]+)?) = 0 or 1 '.' + string of digits
         match=re.search(r'([^=<>]*)([<=>][=]?[0-9]+(.[0-9]+)?)',cond)
         #match=re.search('.*[=<>][0-9])
         thevar=match.group(1)
@@ -285,7 +290,7 @@ def extract_the_things(UKBr, args):
         print('Baseline visit data only')
     # Does keyword translation and returns actual variable names
     stuff=actual_vars(UKBr, args.vars)
-    Df = UKBr.extract_many_vars(stuff,baseline_only=args.baseline_only)
+    Df = UKBr.extract_many_vars(stuff,baseline_only=args.baseline_only, combine=args.combine)
     if args.remove_missing:
         print('Remove all values marked as "nan", "-3" and "-7"')
         Df = remove(UKBr, Df,args)

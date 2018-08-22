@@ -14,6 +14,7 @@ import re
     python extract_death.py \
         --csv <csv file> \
         --html <html file> \
+        --excl x/y/z.csv \
         --out <results folder> \
         --codes ['C34'] \ ## death by lung cancer. Default is 'All', returns all deaths by any cause in UKB
         --primary True \ ## parse primary cause of death

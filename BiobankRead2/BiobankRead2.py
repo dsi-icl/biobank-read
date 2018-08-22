@@ -11,7 +11,7 @@ Edited 01/06/2017
 import pandas as pd
 import bs4 #beautifulsoup4 package
 import re # RegEx 
-import urllib3 as urllib2
+import urllib3
 import numpy as np
 import os
 import os.path
@@ -59,16 +59,22 @@ class BiobankRead():
     def clean_columns(df):
         '''
         Remove any "special_char"s in either dataframe columns or a string.
+        
+        Return original column name(s) and stripped versions 
+        
+        -Bill Crum.
+        
         '''
+        add_char = '. '
         if type(df) is str:
             dforig = df
             dfstrip = df.strip().lower()
-            for ch in BiobankRead.special_char+'. ':
+            for ch in BiobankRead.special_char+add_char:
                 dfstrip = dfstrip.replace(ch, '')
         else:
             dforig = df.columns
             dfstrip = df.columns.str.strip().str.lower()
-            for ch in BiobankRead.special_char+'. ':
+            for ch in BiobankRead.special_char+add_char:
                 dfstrip = dfstrip.str.replace(ch, '')
         return [dforig, dfstrip]        
 
@@ -138,10 +144,8 @@ class BiobankRead():
         allvars = self.All_variables()
         self.Vars = allvars['names']
         self.data_types = allvars['types']
-        
-        # Variable to hold soup rows extraction
-        self.allrows = None
-        
+        self.allrows = allvars['allrows']
+                
         # All EIDS
         self.Eids_all = self.GetEIDs()
 
@@ -228,7 +232,7 @@ class BiobankRead():
             if res1 is not None:
                 res1 = res1.group(0)
                 ## get variable data type xx1 between "nowrap;\" and "</span>"
-                x1,y1,z1=res1.partition('nowrap;\">')
+                x1,y1,z1=res1.partition('nowrap;\">')            
                 xx1,yy1,zz1=z1.partition('</span>')
                 data_type.append(xx1)
                 ## get variable name xx between '>' and '</td></tr>'
@@ -257,7 +261,7 @@ class BiobankRead():
                  res2.append(x)
         res = res2
         '''
-        return {'names':res, 'types':data_type}
+        return {'names':res, 'types':data_type, 'allrows':allrows}
     
     def GetEIDs(self, filename=None):
         """Return all the EIDs"""
@@ -270,9 +274,12 @@ class BiobankRead():
         return EIDs
     
     def Get_ass_dates(self, dropNaN=False, baseline_only=False):
+        '''
+        Convenience function for assessment dates.
+        '''
         # data frame of EIDs
         var = 'Date of attending assessment centre'
-        Ds = self.extract_variable(var)#
+        Ds = self.extract_variable(var)
         Ds = self.rename_columns(Ds, var, baseline_only=baseline_only)
         return Ds   
 
@@ -285,8 +292,6 @@ class BiobankRead():
         '''
         
         # extract fields 
-        if self.allrows is None:
-            self.allrows = self.soup.findAll('tr')
         allrows = self.allrows
         
         # Deal with special symbols in variable name
@@ -299,15 +304,14 @@ class BiobankRead():
             else:
                 newvar.extend([v])
         variable = ''.join(newvar)
-                
+        
+        # FIND VARIABLES IN MASTER LIST
         # Find variable embedded like this:
         # ... <td rowspan="1">Heel ultrasound method<br> ...
         # Or this:
         # ... <td rowspan="1">Heel ultrasound method.<br> ...
-                
-                
         searchvar = '>'+variable+'(.?)<'
-        userrows = [t for t in allrows if re.search(searchvar,str(t))]
+        userrows = [t for t in allrows if re.search(searchvar, str(t))]
         if not userrows:
             raise Exception('The input variable is not in the files')
         if len(userrows) > 1:
@@ -324,6 +328,7 @@ class BiobankRead():
             print('warning - index for', variable, 'not found')
             return None
             
+        # FIND MATCHING COLUMNS FOR VARIABLES AND READ IN FROM FILE
         ## Retrieve all associated columns with variables names 
         # Encoded anonymised participant ID
         key = ['eid']
@@ -374,7 +379,6 @@ class BiobankRead():
         return idx
         
         
-        
     def illness_codes_categories(self, data_coding=6):
         """Returns data coding convention from online page"""
         
@@ -387,11 +391,13 @@ class BiobankRead():
             linkstr = linkstr[0]
             link = linkstr['href']
 								            
-	# explicit link search deprecated
+        # explicit link search deprecated
         #link = BiobankRead.code_link+str(data_coding)
 
-        response = urllib2.urlopen(link)
-        html = response.read()
+        http = urllib3.PoolManager()
+        response = http.request('GET', link)
+        #response = urllib2.urlopen(link)
+        html = response.data
         soup = bs4.BeautifulSoup(html,'html.parser')
         allrows = soup.findAll('tr')
         
@@ -410,7 +416,27 @@ class BiobankRead():
         Groups = pd.Series(data=Group_codes,index=Group_names)
         return Groups
         
-           
+
+    def list_all_related_vars(self, keyword=None):
+        '''
+        Searches the variable list for variables which contain one or more supplied keywords.
+        Returns the matching variables in a list.
+        Note: case-insensitive
+        
+        Use for browsing the variable list wethout extracting data.
+        -Bill Crum
+        '''
+        keywordlist = keyword
+        if isinstance(keyword, str):
+            keywordlist = [keyword]
+        varlist = []
+        for keyword in keywordlist:
+            keyword = keyword.lower()
+            stuff = [t for t in self.Vars if keyword in t.lower()]
+            if len(stuff) > 0:
+                varlist = varlist+stuff
+        return varlist
+
     def all_related_vars(self, keyword=None, dropNaN=True):
         '''
         Extracts all variables related to a keyword variable (input)
@@ -422,49 +448,54 @@ class BiobankRead():
             print(' (all_related_vars) supply keyword to search over')
             return None
             
-        stuff = [t for t in self.Vars if keyword in t]
+        stuff = self.list_all_related_vars([keyword])
         stuff_var = {}
         if len(stuff) > 0:
             for var in stuff:
                 DBP = self.extract_variable(variable=var)
                 if dropNaN:
                     # drop subjects with no reported illness
-                    # Get a boolean series with True where all fields present
-                    tmp =  ~DBP.isnull().any(axis=1)
-                    DBP = DBP[tmp]
-                    #don't think this original bit below works as intended
-                    #tmp = list(DBP.columns.values)
-                    #DBP = DBP[np.isfinite(DBP[tmp[1]])]    
+                    DBP = DBP[DBP.drop('eid', axis=1).notnull().any(axis=1)]
                 stuff_var[var] = DBP
         else:
             print('No match for', keyword, 'found')
         return stuff_var, stuff
 
 
-    def extract_many_vars(self, keywords=None,
-                          dropNaN=False,spaces=False,baseline_only=False):
+    def extract_many_vars(self, varnames=None,
+                          dropNaN=False,spaces=False,baseline_only=False, combine='outer'):
         '''
         Extract variables for several pre-specified variable names 
         Supply these as keywords=[var1, var2, ...]
         Returns one single df with eids and each variables as columns
         dropNaN = True/False = whether to ignore NaN entries
         spaces = drop variable name after first space when labelling columns
+        
+        combine='outer' will inclusively merge each variable into the master list
+        combine='inner' will only retain cases where data exists for all variables
+        combine='partial' retains cases where data exists in at least one variable        
+        
         '''
-        if keywords is None:
-            print(' (extract_many_vars) supply [keywords] to search over')
+        if varnames is None:
+            print(' (extract_many_vars) supply [varnames] to search over')
             return None
             
         # Convert single argument to list
         # This because len(string) > 1
-        if isinstance(keywords, str):
-            keywords = [keywords]
+        if isinstance(varnames, str):
+            varnames = [varnames]
+
+        # Process combine option for how to merge variables
+        combine0 = combine
+        if combine == 'partial':
+            combine0 = 'outer'
 
         main_Df = pd.DataFrame(columns =['eid'])
         main_Df['eid'] = self.Eids_all
-        for var in keywords:
+        for var in varnames:
             print(var)
             # Get variable
-            DBP = self.extract_variable(variable=var, baseline_only=baseline_only)
+            DBP = self.extract_variable(variable=var, baseline_only=baseline_only, dropNaN=dropNaN)
             
             # Partition name for column naming
             if spaces:
@@ -477,15 +508,21 @@ class BiobankRead():
                 # drop subjects with no reported illness in any variable
                 # Get a boolean series with True where all fields present
                 # Search for any null field then negate with ~
-                tmp = ~DBP.isnull().any(axis=1)
-                DBP = DBP[tmp]
-                main_Df = main_Df[tmp]
+                #tmp = ~DBP.isnull().any(axis=1)
+                #DBP = DBP[tmp]
+                #main_Df = main_Df[tmp]
+                DBP = DBP[DBP.drop('eid', axis=1).notnull().any(axis=1)]
                 #don't think this original bit below works as intended
                 #tmp = list(DBP.columns.values)
                 #DBP = DBP[np.isfinite(DBP[tmp[1]])]
                 
             # Add variable to returned data-frame    
-            main_Df = pd.merge(main_Df,DBP,on='eid',how='outer')
+            main_Df = pd.merge(main_Df,DBP,on='eid',how=combine0)
+            
+        # if combine == 'partial', we require at least one entry to be valid for each eid
+        # if combine == 'inner', all entries must be valid
+        if combine == 'partial':
+            main_Df = main_Df[main_Df.drop('eid', axis=1).notnull().any(axis=1)]
             
         return main_Df
 
@@ -639,7 +676,7 @@ class BiobankRead():
 #        key = name of mean in new dataframe
 #        
 #        (I suspect this isn't used any more.)
- #       21-03-18 : no that prob right
+#       21-03-18 : no that prob right
 #        '''
 #        if df is None:
 #            print ' (df_mean) supply dataframe with variables of interest'
@@ -754,8 +791,10 @@ class BiobankRead():
         res = test.group(0)
         x,y,z=res.partition('href="')
         link,y,u=z.partition('">')
-        response = urllib2.urlopen(link)
-        html = response.read()
+        http = urllib3.PoolManager()
+        response = http.request('GET', link)
+        #response = urllib2.urlopen(link)
+        html = response.data
         soup = bs4.BeautifulSoup(html,'html.parser')
         allrows = soup.findAll('tr')
         rows_again = [t for t in allrows if re.search('class=\"int\">(.?)*</td><td class=\"txt\">(.?)*</td>',str(t))]

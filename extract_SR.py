@@ -12,6 +12,7 @@ import pandas as pd
     python extract_SR.py \
         --csv <csv file> \
         --html <html file> \
+        --excl x/y/z.csv \
         --out <results folder> \
         --disease 'lung cancer' \ ## which self-reported diseases to extract
         --SRcancer True \ ## parse self-repoted cancer OR non-cancer diseases
@@ -51,7 +52,7 @@ def num_codes(UKBr, args):
         for x in args.disease:
             if type(x) is str:
                 Y = UKBr.find_SR_codes(select=x,cancer=args.SRcancer)
-                tmp = tmp +Y
+                tmp = tmp+Y
             else:
                 Y = x
                 tmp = tmp.append(Y)

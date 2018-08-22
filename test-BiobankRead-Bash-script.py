@@ -428,7 +428,7 @@ hespath = 'Z:\\EABOAGYE\\Users\\wcrum\\Projects\\UKBB\\UKBB-data-2018\\ukb.tsv'
 
 # Output
 outpath = 'H:\\IC-Stuff\\software\\Biobank'
-outname = 'testnewVAR2'
+outname = 'testnewVARpartial'
 outfile = os.path.join(outpath, outname)
 
 # Construct script path and arguments for each script
@@ -449,10 +449,11 @@ if scriptname == 'extract_variables.py':
                 ' --excl '+exclpath,
                 ' --cov_corr True', 
                 ' --aver_visits False', 
+                ' --combine partial', 
                 ' --out ' + outfile]
 elif scriptname == 'extract_death.py':
     # Data file for codes or use list e.g. ' --codes C34  C42'
-    codespath = 'H:\\IC-Stuff\\software\\Biobank\\codes.txt'
+    codespath = 'H:\\IC-Stuff\\software\\Biobank\\codes1.txt'
     # Command string
     bbreadargs = [scriptname, 
                 ' --csv '+csvpath, 

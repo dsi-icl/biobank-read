@@ -12,6 +12,7 @@ import re
     python HES_extract.py 
     --csv  ukb21204.csv  
     --html ukb21204.html 
+    --excl x/y/z.csv \
     --tsv ukb.tsv 
     --codes C49 
     --codeType ICD10 
