@@ -92,6 +92,7 @@ if __name__ == '__main__':
     namehtml=args.html
     searchlist = args.keywords
     match = args.match
+    match = match.tolower()
     
     
     print('Searching for', searchlist);
