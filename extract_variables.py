@@ -56,8 +56,8 @@ def str2boolorlist(v):
 parser = argparse.ArgumentParser(description="\n BiobankRead Extract_Variable. Does what it says hehe")
 
 in_opts = parser.add_argument_group(title='Input Files', description="Input files. The --csv and --html option are required")
-in_opts.add_argument("--csv", metavar="{File1}", type=str,required=True, help='Specify the csv file associated with the UKB application.')
-in_opts.add_argument("--html", metavar="{File2}", type=str,required=True, help='Specify the html file associated with the UKB application.')
+in_opts.add_argument("--csv", metavar="{File1}", type=str,required=False, default=None, help='Specify the csv file associated with the UKB application.')
+in_opts.add_argument("--html", metavar="{File2}", type=str,required=False, default=None, help='Specify the html file associated with the UKB application.')
 
 
 out_opts = parser.add_argument_group(title="Output formatting", description="Set the output directory and common name of files.")
@@ -247,6 +247,9 @@ def filter_vars2(df, args):
         # [0-9]+ = any length string of digits 
         # (.[0-9]+)?) = 0 or 1 '.' + string of digits
         match=re.search(r'([^=<>]*)([<=>][=]?[0-9]+(.[0-9]+)?)',cond)
+        if match is None:
+            print('error processing condition', cond, '- skipping')
+            continue
         #match=re.search('.*[=<>][0-9])
         thevar=match.group(1)
         [dummy, thevar] = UKBr2.BiobankRead.clean_columns(thevar)

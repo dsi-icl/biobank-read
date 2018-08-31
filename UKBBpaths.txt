@@ -1,0 +1,4 @@
+csv  Z:\EABOAGYE\Users\wcrum\Projects\UKBB\UKBB-data-2018\ukb21204.csv
+html   Z:\EABOAGYE\Users\wcrum\Projects\UKBB\UKBB-data-2018\ukb21204.html
+excl  Z:\EABOAGYE\Users\wcrum\Projects\UKBB\UKBB-data-2018\w10035_20180503_exclusions.csv
+tsv  Z:\EABOAGYE\Users\wcrum\Projects\UKBB\UKBB-data-2018\ukb.tsv

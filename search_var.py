@@ -6,10 +6,8 @@ Created on Thu Aug 23 09:55:52 2018
 """
 
 import argparse
-import pandas as pd
-import numpy as np
-import warnings
 import re
+import os
 import bs4
 
 '''Example run:
@@ -21,8 +19,8 @@ import bs4
 
 parser = argparse.ArgumentParser(description="\n BiobankRead-Bash search_var. ")
 
-in_opts = parser.add_argument_group(title='Input Files', description="Input files. The --html option is required")
-in_opts.add_argument("--html", metavar="{File2}", type=str,required=True, help='Specify the html file associated with the UKB application.')
+in_opts = parser.add_argument_group(title='Input Files', description="Input files.")
+in_opts.add_argument("--html", metavar="{File2}", type=str,required=False, help='Specify the html file associated with the UKB application.')
 in_opts.add_argument("--match", type = str, default='or',help="and / or", nargs='+')
 in_opts.add_argument("--keywords",default=[],help="one or more search terms", nargs='+')
 
@@ -84,6 +82,34 @@ def get_all_related_vars(Vars, keyword=None, match='or'):
             
     return varlist
 
+def  getfilenames(html_file=None,csv_file=None, csv_exclude=None, tsv_file=None):
+    '''Nasty duplication of function in BiobankRead class.'''
+    fpname = 'UKBBpaths.txt'
+    filedict = {'html' : html_file, 'csv': csv_file, 'excl' : csv_exclude, 'tsv' : tsv_file}
+    fpdir1 = os.getcwd() # current working directory
+    fpdir2 = os.path.expanduser('~') # cross-platform home directory
+    # Try each directory in turn until we find match
+    foundsomething = False
+    for fpdir in [fpdir1, fpdir2]:
+        fpfile = os.path.join(fpdir, fpname)
+        if os.path.isfile(fpfile):
+            with open(fpfile) as f:
+                content = f.readlines() 
+                for line in content:
+                    sline = str.split(line)
+                    # Line format is:
+                    # key  filepath
+                    if len(sline) == 2:
+                        (key, fp) = sline
+                        if os.path.isfile(fp) and (key in filedict) and (filedict[key] == None):
+                            filedict[key] = fp
+                            #print(' Found file', key, 'is', fp)
+                            foundsomething = True
+        if foundsomething:
+            break
+    return filedict
+
+
 # MAIN
 if __name__ == '__main__':
     
@@ -92,8 +118,10 @@ if __name__ == '__main__':
     namehtml=args.html
     searchlist = args.keywords
     match = args.match
-    match = match.tolower()
+    match = match.lower()
     
+    filedict = getfilenames(html_file=namehtml)
+    namehtml = filedict['html']
     
     print('Searching for', searchlist);
     print('Matching criterion is"', match, '"')

@@ -428,7 +428,7 @@ hespath = 'Z:\\EABOAGYE\\Users\\wcrum\\Projects\\UKBB\\UKBB-data-2018\\ukb.tsv'
 
 # Output
 outpath = 'H:\\IC-Stuff\\software\\Biobank'
-outname = 'testnewVARpartial'
+outname = 'testnewVARfile'
 outfile = os.path.join(outpath, outname)
 
 # Construct script path and arguments for each script
@@ -439,6 +439,7 @@ if scriptname == 'extract_variables.py':
     #varString = 'H:\\IC-Stuff\\software\\Biobank\\BiobankRead-Bash\\vars_test.txt'
     filterList = ['"Age when attended assessment centre>50"', '"Age when attended assessment centre<70"', '"Body mass index (BMI)>=23"', '"Body mass index (BMI)<=30"']
     # Command string
+    '''
     bbreadargs = [scriptname, 
                 ' --csv '+csvpath, 
                 ' --html '+htmlpath, 
@@ -447,6 +448,16 @@ if scriptname == 'extract_variables.py':
                 ' --remove_outliers True', 
                 ' --baseline_only False', 
                 ' --excl '+exclpath,
+                ' --cov_corr True', 
+                ' --aver_visits False', 
+                ' --combine partial', 
+                ' --out ' + outfile]
+    '''
+    bbreadargs = [scriptname, 
+                ' --vars ' + varString, 
+                ' --filter ' + ' '.join(filterList), 
+                ' --remove_outliers True', 
+                ' --baseline_only False', 
                 ' --cov_corr True', 
                 ' --aver_visits False', 
                 ' --combine partial', 
