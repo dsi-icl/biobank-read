@@ -499,17 +499,21 @@ else:
 
 # Make command-line
 # Note  append is required here
-subprocessargs = ['python.exe']
+subprocessargs = ['python']
 subprocessargs.append(bbreadargs)
 
 # Output command line
 print
 print subprocessargs[0], ' '.join(subprocessargs[1])
 
+subprocessargs[1]=' '.join(subprocessargs[1])
+#print
+#print type(subprocessargs[0]), type(subprocessargs[1])
 # Run as sub-process to ensure arguments are passed correctly
 print
-print 'Running as sub-process, please wait.'
-subprocess.call(subprocessargs)
+print 'Running as sub-process, please wait...'
+subprocess.call(subprocessargs,shell=True)
+
 
 
 
