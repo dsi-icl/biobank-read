@@ -427,8 +427,13 @@ exclpath =  ''
 hespath = '/media/storage/UkBiobank/HES data/ukb_HES_236.tsv'
 
 # Output
+<<<<<<< HEAD
 outpath = '/media/storage/codes/BiobankRead-Bash/'
 outname = 'testnewVARpartial'
+=======
+outpath = 'H:\\IC-Stuff\\software\\Biobank'
+outname = 'testnewVARfile'
+>>>>>>> 352473d4503356840d7fcf9fc84615f7be15ae0f
 outfile = os.path.join(outpath, outname)
 
 # Construct script path and arguments for each script
@@ -439,6 +444,7 @@ if scriptname == 'extract_variables.py':
     #varString = 'H:\\IC-Stuff\\software\\Biobank\\BiobankRead-Bash\\vars_test.txt'
     filterList = ['"Age when attended assessment centre>50"', '"Age when attended assessment centre<70"', '"Body mass index (BMI)>=23"', '"Body mass index (BMI)<=30"']
     # Command string
+    '''
     bbreadargs = [scriptname, 
                 ' --csv '+csvpath, 
                 ' --html '+htmlpath, 
@@ -447,6 +453,16 @@ if scriptname == 'extract_variables.py':
                 ' --remove_outliers True', 
                 ' --baseline_only False', 
                ## ' --excl '+exclpath,
+                ' --cov_corr True', 
+                ' --aver_visits False', 
+                ' --combine partial', 
+                ' --out ' + outfile]
+    '''
+    bbreadargs = [scriptname, 
+                ' --vars ' + varString, 
+                ' --filter ' + ' '.join(filterList), 
+                ' --remove_outliers True', 
+                ' --baseline_only False', 
                 ' --cov_corr True', 
                 ' --aver_visits False', 
                 ' --combine partial', 

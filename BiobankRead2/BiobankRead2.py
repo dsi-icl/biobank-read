@@ -79,9 +79,49 @@ class BiobankRead():
         return [dforig, dfstrip]        
 
 
+    def  getfilenames(self, html_file=None,csv_file=None, csv_exclude=None, tsv_file=None):
+        fpname = 'UKBBpaths.txt'
+        filedict = {'html' : html_file, 'csv': csv_file, 'excl' : csv_exclude, 'tsv' : tsv_file}
+        fpdir1 = os.getcwd() # current working directory
+        fpdir2 = os.path.expanduser('~') # cross-platform home directory
+        # Try each directory in turn until we find match
+        foundsomething = False
+        for fpdir in [fpdir1, fpdir2]:
+            fpfile = os.path.join(fpdir, fpname)
+            if os.path.isfile(fpfile):
+                with open(fpfile) as f:
+                    content = f.readlines() 
+                    for line in content:
+                        sline = str.split(line)
+                        # Line format is:
+                        # key  filepath
+                        if len(sline) == 2:
+                            (key, fp) = sline
+                            if os.path.isfile(fp) and (key in filedict) and (filedict[key] == None):
+                                filedict[key] = fp
+                                print(' Found file', key, 'is', fp)
+                                foundsomething = True
+            if foundsomething:
+                break
+        
+        return filedict
+        
     def __init__(self, html_file = None, csv_file = None, csv_exclude = None):
         
-        if (html_file == None) or (csv_file == None):
+        # Look for file containing file-paths
+        # Search priority is:
+        #       function arguments override everything else
+        #       current directory
+        #       home directory
+        filedict = self.getfilenames(html_file=html_file, csv_file=csv_file, csv_exclude=csv_exclude)
+                    
+        # Construct the path to the html file
+        self.html_file = filedict['html']
+        self.csv_file  = filedict['csv']
+        self.csv_exclude = filedict['excl']
+        self.hes_file  = filedict['tsv']
+
+        if (self.html_file == None) or (self.csv_file == None):
             print
             print(' CLASS NOT INITIALISED')
             print()
@@ -98,17 +138,25 @@ class BiobankRead():
             print('                  alongside the.csv file')
             print(' exclusions.csv = CSV with single \'eid\' column of cases to exclude')
             print()
+            print(' ALTERNATIVELY')
+            print(' Create a file called UKBBpaths.txt in your home directory as follows')
+            print(' csv  path/to/csv/file')
+            print(' html path/to/html/file')
+            print(' excl path/to/exclusion/file')
+            print(' hes  path/to/hesfile')
+            print(' NB csv and html paths are required in general')
+            print()
             self.OK = False
             return
 
-        if not os.path.isfile(html_file):
+        if not os.path.isfile(self.html_file):
             print
             print(' INITIALISATION ERROR: html_file =', html_file, 'not found')
             print
             self.OK = False
             return 
             
-        if not os.path.isfile(csv_file):
+        if not os.path.isfile(self.csv_file):
             print
             print(' INITIALISATION ERROR: csv_file =', csv_file, 'not found')
             print
@@ -116,10 +164,6 @@ class BiobankRead():
             return None
 
         print(' OK, initialising class now ... ')
-                    
-        # Construct the path to the html file
-        self.html_file = html_file#self.files_path()
-        self.csv_file = csv_file#self.files_path()
 
         #HES file processing variables
         this_dir, this_filename = os.path.split(__file__)

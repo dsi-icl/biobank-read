@@ -58,7 +58,7 @@ You are strongly adviced to use this package as part of an anaconda_ environment
 ############
 Usage
 ############
-There are 4 files in BiobankRead-bash, all aimed at data extraction, each specialised in a data time:
+There are 4 files in BiobankRead-bash, all aimed at data extraction, each specialised in a data type:
 
 - extract_variables.py: for generic clinical / phenotype data
 - extract_death.py: for mortality data only
@@ -112,7 +112,16 @@ These files are designed to be called from a command line terminal as follow:
         --firstvisit True \ ### Default: True, Mark earliest/latest visit for each subjects
         --baseline True & ### Mark visits before and after baseline assessment 
  
- 
+For ease of use, the --csv, --html, --excl and --tsv filepaths can be put in a text file called UKBBpaths.txt
+in the current directory or in the user home directory. This file is automatically read when any of the scripts are run.
+An example is below:
+--------------------------------------------------------------------------
+csv      Z:\EABOAGYE\Users\wcrum\Projects\UKBB\UKBB-data-2018\ukb21204.csv
+html   Z:\EABOAGYE\Users\wcrum\Projects\UKBB\UKBB-data-2018\ukb21204.html
+excl    Z:\EABOAGYE\Users\wcrum\Projects\UKBB\UKBB-data-2018\w10035_20180503_exclusions.csv
+tsv      Z:\EABOAGYE\Users\wcrum\Projects\UKBB\UKBB-data-2018\ukb.tsv
+--------------------------------------------------------------------------
+
 
 It is best to call these functions within executable files - such as in the test_ script here - to ensure alll input variables are well specified.
         
@@ -151,11 +160,18 @@ Use --combine to control how the data is output.
 --combine  outer output all cases (eids) regardless of the validity of the extracted variables
 --combine  partial outputs cases (eids) which have at least one valid entry in the extracted variables
 
-eid		A		B
-0		2		3
-1		NaN		4
-2		5		NaN
-3		NaN		NaN
+
+=====   =====  ====== 
+eid     A      B
+=====   =====  ======
+0		  2		3
+1		  NaN	   4
+2		  5		NaN
+3		  NaN	   NaN
+=====   =====  ====== 
+
+
+
 In the above NaN (Not-a-Number) is an invalid entry.
 
 --combine  outer would result in the following:
