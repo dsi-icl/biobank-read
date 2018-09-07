@@ -421,13 +421,13 @@ scriptname = scriptList[scriptnum];
 
 
 # Where the data is stored
-csvpath = 'Z:\\EABOAGYE\\Users\\wcrum\\Projects\\UKBB\\UKBB-data-2018\\ukb21204.csv'
-htmlpath =  'Z:\\EABOAGYE\\Users\\wcrum\\Projects\\UKBB\\UKBB-data-2018\\ukb21204.html'
-exclpath =  'Z:\\EABOAGYE\\Users\\wcrum\\Projects\\UKBB\\UKBB-data-2018\\w10035_20180503_exclusions.csv'
-hespath = 'Z:\\EABOAGYE\\Users\\wcrum\\Projects\\UKBB\\UKBB-data-2018\\ukb.tsv'
+csvpath = '/media/storage/UkBiobank/Application 236/R4528/ukb4528.csv'
+htmlpath =  '/media/storage/UkBiobank/Application 236/R4528/ukb4528.html'
+exclpath =  ''
+hespath = '/media/storage/UkBiobank/HES data/ukb_HES_236.tsv'
 
 # Output
-outpath = 'H:\\IC-Stuff\\software\\Biobank'
+outpath = '/media/storage/codes/BiobankRead-Bash/'
 outname = 'testnewVARpartial'
 outfile = os.path.join(outpath, outname)
 
@@ -446,7 +446,7 @@ if scriptname == 'extract_variables.py':
                 ' --filter ' + ' '.join(filterList), 
                 ' --remove_outliers True', 
                 ' --baseline_only False', 
-                ' --excl '+exclpath,
+               ## ' --excl '+exclpath,
                 ' --cov_corr True', 
                 ' --aver_visits False', 
                 ' --combine partial', 
@@ -494,24 +494,24 @@ elif scriptname == 'HES_extract.py':
                 ' --baseline True', 
                 ' --out ' + outfile]
 else:
-    print 'error: scriptname =', scriptname, 'not recognised'
+    print('error: scriptname =', scriptname, 'not recognised')
     sys.exit(1)
 
 # Make command-line
 # Note  append is required here
-subprocessargs = ['python']
+subprocessargs = ['python.exe']
 subprocessargs.append(bbreadargs)
 
 # Output command line
 print
-print subprocessargs[0], ' '.join(subprocessargs[1])
+print(subprocessargs[0]+' '+' '.join(subprocessargs[1]))
 
 subprocessargs[1]=' '.join(subprocessargs[1])
 #print
 #print type(subprocessargs[0]), type(subprocessargs[1])
 # Run as sub-process to ensure arguments are passed correctly
 print
-print 'Running as sub-process, please wait...'
+print('Running as sub-process, please wait...')
 subprocess.call(subprocessargs,shell=True)
 
 
