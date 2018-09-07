@@ -52,6 +52,7 @@ You must have the following installed to execute the files:
 - Pandas
 - BeautifulSoup4
 - re
+- urllib3
 
 You are strongly adviced to use this package as part of an anaconda_ environment formatted to run python 3.6 with all the aformentioned dependencies.
 
