@@ -160,11 +160,18 @@ Use --combine to control how the data is output.
 --combine  outer output all cases (eids) regardless of the validity of the extracted variables
 --combine  partial outputs cases (eids) which have at least one valid entry in the extracted variables
 
-eid		A		B
-0		2		3
-1		NaN		4
-2		5		NaN
-3		NaN		NaN
+
+=====   =====  ====== 
+eid     A      B
+=====   =====  ======
+0		  2		3
+1		  NaN	   4
+2		  5		NaN
+3		  NaN	   NaN
+=====   =====  ====== 
+
+
+
 In the above NaN (Not-a-Number) is an invalid entry.
 
 --combine  outer would result in the following:
