@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 import warnings
 import re
+import sys
 
 '''Example run:
     python extract_variables.py \
@@ -293,6 +294,7 @@ def extract_the_things(UKBr, args):
         print('Baseline visit data only')
     # Does keyword translation and returns actual variable names
     stuff=actual_vars(UKBr, args.vars)
+    print(stuff)
     Df = UKBr.extract_many_vars(stuff,baseline_only=args.baseline_only, combine=args.combine)
     if args.remove_missing:
         print('Remove all values marked as "nan", "-3" and "-7"')
@@ -366,7 +368,7 @@ if __name__ == '__main__':
     namecsv=args.csv
     nameexcl = args.excl
     ### import Biobankread package
-    # sys.path.append('D:\new place\Postdoc\python\BiobankRead-Bash')
+    sys.path.append('BiobankRead-Bash')
     # Note some issues with case of directory names on different systems
     try:
         import biobankRead2.BiobankRead2 as UKBr2

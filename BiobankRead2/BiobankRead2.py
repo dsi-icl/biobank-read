@@ -211,7 +211,7 @@ class BiobankRead():
         if csv_exclude != None:
             self.Eids_exclude = self.GetEIDs(csv_exclude)
             self.Nexcl = len(self.Eids_exclude)
-            print ' Found', self.Nexcl, 'potential EIDS to exclude'
+            print(' Found', self.Nexcl, 'potential EIDS to exclude')
             
         # Apply exclusions to EID list
         if type(self.Eids_exclude) == pd.DataFrame:
@@ -219,9 +219,9 @@ class BiobankRead():
             self.Eids_all = df.loc[df['_merge'] == 'left_only']['eid']
             Nold = self.N
             self.N = len(self.Eids_all)
-            print ' ', Nold-self.N, 'matched exclusions were made'
+            print( ' ', Nold-self.N, 'matched exclusions were made')
             if Nold > self.N:
-                print ' ', self.N, 'EIDS remain'
+                print(' ', self.N, 'EIDS remain')
 
         print('Done');
 
@@ -253,12 +253,12 @@ class BiobankRead():
     
     def read_basic_doc(self,doc):
         try:
-            with open(doc) as f:
+           with open(doc) as f:
                 variable=f.read()
         except:
             raise IOError('Input file is not a .txt file')
         lst =[str(line) for line in open(doc).read().splitlines()]#.readlines()] 
-	if lst is None:
+        if lst is None:
             raise IOError('Input file formatted wrong, needs to be new-line-break separated')
         return lst
     
@@ -534,8 +534,8 @@ class BiobankRead():
         if combine == 'partial':
             combine0 = 'outer'
 
-        main_Df = pd.DataFrame(columns =['eid'])
-        main_Df['eid'] = self.Eids_all
+        main_Df = pd.DataFrame(data={'eid': self.Eids_all})#columns =['eid'])
+        #main_Df['eid'] = self.Eids_all
         for var in varnames:
             print(var)
             # Get variable
