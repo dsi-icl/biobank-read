@@ -245,13 +245,18 @@ class BiobankRead():
         Return True if doc is of the form 'something.txt'
         doc is expected to be either a list of strings or a filename
         """
+        #if type(doc) is list:
         if type(doc) is list:
-            return False
-        else:
-            b=doc.find('.txt')
-            return (b>-1)
+            if len(doc)>1:
+                return False        
+            else:
+                doc=doc[0]
+        b=doc.find('.txt')
+        return (b>-1)
     
     def read_basic_doc(self,doc):
+        if type(doc) is list and len(doc)==1:
+            doc = doc[0]
         try:
            with open(doc) as f:
                 variable=f.read()
@@ -393,9 +398,10 @@ class BiobankRead():
             everything = everything[cols[keep]]
             
         if dropNaN:
-            tmp = ~everything.isnull().any(axis=1)
-            everything = everything[tmp]
-            
+            #tmp = ~everything.isnull().any(axis=1)
+            #everything = everything[tmp]
+            everything.dropna(axis=0,how='all',subset=everything.columns[1::],inplace=True)
+
         return everything
         
     def variable_type(self,var_names):
@@ -534,13 +540,13 @@ class BiobankRead():
         if combine == 'partial':
             combine0 = 'outer'
 
-        main_Df = pd.DataFrame(data={'eid': self.Eids_all})#columns =['eid'])
-        #main_Df['eid'] = self.Eids_all
+        main_Df = pd.DataFrame()
+        main_Df['eid'] = self.Eids_all['eid']
         for var in varnames:
             print(var)
             # Get variable
             DBP = self.extract_variable(variable=var, baseline_only=baseline_only, dropNaN=dropNaN)
-            
+
             # Partition name for column naming
             if spaces:
                 b,k,a = var.partition(' ')

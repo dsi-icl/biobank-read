@@ -197,6 +197,7 @@ def filter_vars(df,args):
     df_sub=pd.DataFrame(columns={'Vars','conds'})
     for cond in args.filter:
         #\S{1, 2} = 1-2 non-whitespace characters
+        print(cond)
         match=re.search('([a-zA-Z0-9\s]+)(\S{1,2}\d+)',cond)
         thevar=match.group(1)
         condition=match.group(2)
@@ -294,7 +295,6 @@ def extract_the_things(UKBr, args):
         print('Baseline visit data only')
     # Does keyword translation and returns actual variable names
     stuff=actual_vars(UKBr, args.vars)
-    print(stuff)
     Df = UKBr.extract_many_vars(stuff,baseline_only=args.baseline_only, combine=args.combine)
     if args.remove_missing:
         print('Remove all values marked as "nan", "-3" and "-7"')
@@ -309,7 +309,7 @@ def extract_the_things(UKBr, args):
         print('Filter variables based on condition')
         if UKBr.is_doc(args.filter):
             args.filter=UKBr.read_basic_doc(args.filter)
-        Df = filter_vars2(Df,args)
+        Df = filter_vars2(Df,args)#filter_vars2 - Bill's
     return Df
 
 
@@ -318,7 +318,7 @@ def float_to_cat(UKBr, df):
     var = [x.split('_')[0] for x in var]
     types=lambda t: UKBr.variable_type(t)
     Types=[types(x) for x in var]
-    cats = [Types.loc[x] for x in Types if 'Categorical' in x]
+    cats = [Types.index(x) for x in Types if 'Categorical' in x]
     for i in cats:
         df[df.columns[i]]=df[df.columns[i]].astype('category')
     return df

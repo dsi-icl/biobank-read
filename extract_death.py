@@ -48,23 +48,26 @@ options.add_argument("--excl", metavar="{File5}", type=str, default=None, help='
 ############################################################################################################
 
 
-class Object(object):
-   pass
-args = Object()
-args.out='D:\MSc projects\\2018\\Confounders\death_lungCancer'
-args.html=r'D:\UkBiobank\Application 10035\\21204\ukb21204.html'
-args.csv=r'D:\UkBiobank\Application 10035\\21204\ukb21204.csv'
-args.codes='All'#['C34']
-args.primary=True
-args.secondary=True
+# class Object(object):
+#    pass
+# args = Object()
+# args.out='D:\MSc projects\\2018\\Confounders\death_lungCancer'
+# args.html=r'D:\UkBiobank\Application 10035\\21204\ukb21204.html'
+# args.csv=r'D:\UkBiobank\Application 10035\\21204\ukb21204.csv'
+# args.codes='All'#['C34']
+# args.primary=True
+# args.secondary=True
 ###################
 
 def getcodes(UKBr, args):
     #argnames = vars(args)
     #codes = argnames['codes'][0]
     codes = args.codes
-    if UKBr.is_doc(codes[0]):
-        Codes=UKBr.read_basic_doc(codes[0])
+    if UKBr.is_doc(codes):
+        Codes=UKBr.read_basic_doc(codes)
+    else:
+        Codes = codes
+    print(Codes)
     Codes = UKBr.find_ICD10_codes(select=Codes)
     return Codes
 
@@ -75,6 +78,7 @@ def count_codes(UKBr, df,args):
     df_new=pd.DataFrame(columns=cols)
     j=0
     # Loop over eids
+    print(len(ids))
     for i in ids:
         # Select this eid
         df_sub=df[df['eid']==i]
@@ -117,8 +121,11 @@ def extractdeath(UKBr, args):
     else:
         string = 'Underlying (primary) cause'*args.primary + 'Contributory (secondary) causes'*args.secondary
         SR = [x for x in All_vars if string+' of death: ICD10' in str(x)]
+        print(SR[0])
         dead_df = UKBr.extract_variable(SR[0],baseline_only=False, dropNaN=True)
-    dead_df.dropna(axis=0,how='all',subset=dead_df.columns[1::],inplace=True)
+    #dead_df.dropna(axis=0,how='all',subset=dead_df.columns[1::],inplace=True)
+    print(len(dead_df))
+    print(dead_df.head())
     if args.codes[0] != 'All':
         dead_df = count_codes(UKBr, dead_df,args)
         dead_df['all_cause'] = dead_df[dead_df.columns[1::]].sum(axis=1)
