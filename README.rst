@@ -48,11 +48,13 @@ Simply Download the files and run from the command line -- in the correct syntax
 First add the full path to BiobankRead-Bash to your PYTHONPATH environment variable.
 
 You must have the following installed to execute the files:
+
 - Python 3.6 or later
 - Pandas
 - BeautifulSoup4
 - re
-- urllib3
+- Urllib3
+- Seaborn
 
 You are strongly adviced to use this package as part of an anaconda_ environment formatted to run python 3.6 with all the aformentioned dependencies.
 
@@ -116,12 +118,11 @@ These files are designed to be called from a command line terminal as follow:
 For ease of use, the --csv, --html, --excl and --tsv filepaths can be put in a text file called UKBBpaths.txt
 in the current directory or in the user home directory. This file is automatically read when any of the scripts are run.
 An example is below:
---------------------------------------------------------------------------
-csv      Z:\EABOAGYE\Users\wcrum\Projects\UKBB\UKBB-data-2018\ukb21204.csv
-html   Z:\EABOAGYE\Users\wcrum\Projects\UKBB\UKBB-data-2018\ukb21204.html
-excl    Z:\EABOAGYE\Users\wcrum\Projects\UKBB\UKBB-data-2018\w10035_20180503_exclusions.csv
-tsv      Z:\EABOAGYE\Users\wcrum\Projects\UKBB\UKBB-data-2018\ukb.tsv
---------------------------------------------------------------------------
+::
+      csv      Z:\EABOAGYE\Users\wcrum\Projects\UKBB\UKBB-data-2018\ukb21204.csv
+      html   Z:\EABOAGYE\Users\wcrum\Projects\UKBB\UKBB-data-2018\ukb21204.html
+      excl    Z:\EABOAGYE\Users\wcrum\Projects\UKBB\UKBB-data-2018\w10035_20180503_exclusions.csv
+      tsv      Z:\EABOAGYE\Users\wcrum\Projects\UKBB\UKBB-data-2018\ukb.tsv
 
 
 It is best to call these functions within executable files - such as in the test_ script here - to ensure alll input variables are well specified.
