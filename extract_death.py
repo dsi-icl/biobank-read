@@ -121,11 +121,8 @@ def extractdeath(UKBr, args):
     else:
         string = 'Underlying (primary) cause'*args.primary + 'Contributory (secondary) causes'*args.secondary
         SR = [x for x in All_vars if string+' of death: ICD10' in str(x)]
-        print(SR[0])
         dead_df = UKBr.extract_variable(SR[0],baseline_only=False, dropNaN=True)
-    #dead_df.dropna(axis=0,how='all',subset=dead_df.columns[1::],inplace=True)
-    print(len(dead_df))
-    print(dead_df.head())
+    dead_df.dropna(axis=0,how='all',subset=dead_df.columns[1::],inplace=True)
     if args.codes[0] != 'All':
         dead_df = count_codes(UKBr, dead_df,args)
         dead_df['all_cause'] = dead_df[dead_df.columns[1::]].sum(axis=1)

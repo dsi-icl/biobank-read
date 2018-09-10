@@ -558,13 +558,9 @@ class BiobankRead():
                 # drop subjects with no reported illness in any variable
                 # Get a boolean series with True where all fields present
                 # Search for any null field then negate with ~
-                #tmp = ~DBP.isnull().any(axis=1)
-                #DBP = DBP[tmp]
-                #main_Df = main_Df[tmp]
-                DBP = DBP[DBP.drop('eid', axis=1).notnull().any(axis=1)]
-                #don't think this original bit below works as intended
-                #tmp = list(DBP.columns.values)
-                #DBP = DBP[np.isfinite(DBP[tmp[1]])]
+                ##
+                #DBP = DBP[DBP.drop('eid', axis=1).notnull().any(axis=1)]
+                DBP.dropna(axis=0,how='all',subset=DBP.columns[1::],inplace=True)
                 
             # Add variable to returned data-frame    
             main_Df = pd.merge(main_Df,DBP,on='eid',how=combine0)
