@@ -118,19 +118,19 @@ def count_codes(UKBr, df, args):
     return df_new
 
 ###################
-class Object(object):
-   pass
-args = Object()
-# args.out='/media/storage/codes/BiobankRead-Bash'
-args.html=r'/media/storage/UkBiobank/Application_236/R4528/ukb4528.html'
-args.csv=r'/media/storage/UkBiobank/Application_236/R4528/ukb4528.csv'
-args.tsv=r'/media/storage/UkBiobank/HESdata/ukb_HES_236.tsv'
-args.codes=['I110','I132','I500','I501','I509']
-args.codeType='ICD10'
-args.dateType='epistart'
-args.firstvisit=True
-args.baseline=True
-args.excl=None
+#class Object(object):
+#   pass
+#args = Object()
+## args.out='/media/storage/codes/BiobankRead-Bash'
+#args.html=r'/media/storage/UkBiobank/Application_236/R4528/ukb4528.html'
+#args.csv=r'/media/storage/UkBiobank/Application_236/R4528/ukb4528.csv'
+#args.tsv=r'/media/storage/UkBiobank/HESdata/ukb_HES_236.tsv'
+#args.codes=['I110','I132','I500','I501','I509']
+#args.codeType='ICD10'
+#args.dateType='epistart'
+#args.firstvisit=True
+#args.baseline=True
+#args.excl=None
 ##
 ###################
 
