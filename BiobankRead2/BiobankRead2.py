@@ -329,7 +329,8 @@ class BiobankRead():
         # data frame of EIDs
         var = 'Date of attending assessment centre'
         Ds = self.extract_variable(var)
-        Ds = self.rename_columns(Ds, var, baseline_only=baseline_only)
+        #Ds = self.rename_columns(Ds, var, baseline_only=baseline_only)
+        #Ds['eid']=[str(e) for e in Ds['eid']]
         return Ds   
 
     def extract_variable(self, variable=None, baseline_only=False, dropNaN=False):
@@ -1005,10 +1006,10 @@ class BiobankRead():
         # Get all the ICD10 diagnosis codes
         df_mini = df[icd].tolist()
         #print df_mini
-        #res_tmp =[ x in icds for x in df_mini]
-        #new_df_2 = df[res_tmp]
-        new_df_2 = df.isin(df_mini)
-        new_df_2['eid'] = df['eid']
+        res_tmp =[ x in icds for x in df_mini]
+        new_df_2 = df[res_tmp]
+        #new_df_2 = df.isin(df_mini)
+        new_df_2.loc[:,'eid'] = df['eid']
         return new_df_2
             
         

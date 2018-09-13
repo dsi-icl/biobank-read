@@ -45,6 +45,8 @@ options.add_argument("--baseline_only", type=str2bool, nargs='?', const=True, de
 options.add_argument("--excl", metavar="{File5}", type=str, default=None, help='Specify the csv file of EIDs to be excluded.')
 
 def num_codes(UKBr, args):
+    if UKBr.is_doc(args.disease):
+        args.disease=UKBr.read_basic_doc(args.disease)
     if type(args.disease) is str:
         tmp=UKBr.find_SR_codes(select=args.disease,cancer=args.SRcancer)
     elif type(args.disease) is list:
@@ -76,11 +78,17 @@ def extract_SR_stuff(UKBr, args):
     """
     All_vars = UKBr.Vars
     if args.SRcancer:
-        SR = [x for x in All_vars if 'Cancer code, self-reported' in str(x)]
+        val = 'Cancer code, self-reported'
     else:
-        SR = [x for x in All_vars if 'Non-cancer illness code, self-reported' in str(x)]
-    SR_df = UKBr.extract_variable(SR[0], baseline_only=args.baseline_only)
+        val = 'Non-cancer illness code, self-reported'
+    SR = [x for x in All_vars if val in str(x)]
+    print(SR)
+    if SR is None:
+        raise ValueError('Variable '+val+' not present in application file')
+    SR_df = UKBr.extract_variable(SR[0], baseline_only=args.baseline_only,dropNaN=True)
+    print('Df extracted')
     SR_df.dropna(axis=0,how='all',subset=SR_df.columns[1::],inplace=True)
+    print(len(SR_df))
     SR_df=count_codes(UKBr, SR_df,args)
     SR_df['all'] = SR_df[SR_df.columns[1::]].sum(axis=1)
     SR_df=SR_df[SR_df['all'] !=0]
@@ -88,19 +96,34 @@ def extract_SR_stuff(UKBr, args):
 
 def count_codes(UKBr, df,args):
     tmp1=num_codes(UKBr, args)
-    ids = list(set(df['eid'].tolist()))
-    cols = ['eid']+[str(x) for x in tmp1]
-    df_new=pd.DataFrame(columns=cols)
-    j=0
-    for i in ids:
-        df_sub=df[df['eid']==i]
-        tmp2=list(df_sub.iloc[0][1:len(df_sub.columns)-1])
-        tmp2=[x for x in tmp2 if str(x) != 'nan']
-        res = [x in tmp2 for x in tmp1]
-        res = [1*(x>0) for x in res]
-        res = [i]+res
-        df_new.loc[j]=res
-        j += 1
+    print(args.disease)
+    print('codes found')
+    print(tmp1)
+    df_new=pd.DataFrame(columns=['eid']+tmp1)
+    for c in df.columns[1::]:
+        new_ymp=pd.DataFrame(columns=['eid'])
+        for d in tmp1:
+            ymp=df[df[c]==d]
+            if(len(ymp)>0):
+                ymp_sub=pd.DataFrame()
+                ymp_sub['eid']=ymp['eid'].tolist()
+                ymp_sub[d]=1
+                new_ymp=pd.merge(new_ymp,ymp_sub,on='eid',how='outer')
+            if(len(new_ymp)>0):
+                df_new=pd.merge(df_new,new_ymp,on='eid',how='outer')
+        #df_new=pd.concat([df_new,new_ymp],ignore_index=False,sort=True)
+    for d in tmp1:
+        cols = [c for c in df_new.columns if str(d) in str(c)]
+        df_new[d]=df_new[cols].fillna(value=0).sum(axis=1)
+        df_new[d]=[1*(V>0) for V in df_new[d]]
+    df_new=df_new[['eid']+tmp1]
+   #for i in ids:
+   #     df_sub=df[df['eid']==i]
+   #     tmp2=list(df_sub.iloc[0][1:len(df_sub.columns)-1])
+   #     #tmp2=[x for x in tmp2 if str(x) != 'nan']
+   #     res = [i]+[int(x in tmp2) for x in tmp1]
+   #     df_new.loc[j]=res
+   #     j += 1
     return df_new
 
 #def clean_up(df):
@@ -111,15 +134,15 @@ def count_codes(UKBr, df,args):
 #    return df2
 
 ###################
-class Object(object):
-   pass
-args = Object()
-args.out='D:\MSc projects\\2018\\Confounders\SR_lungCancer'
-args.html=r'D:\UkBiobank\Application 10035\\21204\ukb21204.html'
-args.csv=r'D:\UkBiobank\Application 10035\\21204\ukb21204.csv'
-args.disease='lung cancer'
-args.SRcancer=True
-args.baseline_only=False
+#class Object(object):
+#   pass
+#args = Object()
+#args.out='/media/storage/codes/BiobankRead-Bash'
+#args.html=r'/media/storage/UkBiobank/Application_236/R4528/ukb4528.html'
+#args.csv=r'/media/storage/UkBiobank/Application_236/R4528/ukb4528.csv'
+#args.disease='asbestosis'
+#args.SRcancer=False
+#args.baseline_only=False
 ###################
 
 

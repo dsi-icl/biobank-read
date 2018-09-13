@@ -47,6 +47,11 @@ def getcodes(UKBr, args):
         Codes = args.codes
     return Codes
 
+def obj_to_int(df):
+    if df['eid'].dtypes != 'int64':
+        df['eid']=pd.to_numeric(df['eid'])
+    return df
+
 def extract_disease_codes(UKBr, Df, args):
     # Get the codes either directly from args.codes or from a file
     # Df = HES dataframe
@@ -71,10 +76,14 @@ def extract_disease_codes(UKBr, Df, args):
         df_ass.rename(columns={df_ass.columns[1]: 'assess_date'},inplace=True)
         # After
         df2=UKBr.HES_after_assess(df=df,assess_dates=df_ass,date=date)
+        df2=obj_to_int(df2)
         df_sub=UKBr.HES_first_last_time(df,date)
+        # fix data type compability issues
+        df_sub=obj_to_int(df_sub)
         df_sub=pd.merge(df_sub,df_ass,on='eid')
         # Before (just a binary flag)
         df3=UKBr.HES_before_assess(df_sub)
+        df_new=obj_to_int(df_new)
         df_new = pd.merge(df_new,df2,on=['eid'],how='outer')
         df_new = pd.merge(df_new,df3,on=['eid'],how='outer')
     return df_new
@@ -112,15 +121,17 @@ def count_codes(UKBr, df, args):
 class Object(object):
    pass
 args = Object()
-args.out='test1'
-args.html=r'D:\UkBiobank\Application 10035\\21204\ukb21204.html'
-args.csv=r'D:\UkBiobank\Application 10035\\21204\ukb21204.csv'
-args.tsv=r'D:\UkBiobank\Application 10035\HES\ukb.tsv'
+# args.out='/media/storage/codes/BiobankRead-Bash'
+args.html=r'/media/storage/UkBiobank/Application_236/R4528/ukb4528.html'
+args.csv=r'/media/storage/UkBiobank/Application_236/R4528/ukb4528.csv'
+args.tsv=r'/media/storage/UkBiobank/HESdata/ukb_HES_236.tsv'
 args.codes=['I110','I132','I500','I501','I509']
 args.codeType='ICD10'
 args.dateType='epistart'
 args.firstvisit=True
 args.baseline=True
+args.excl=None
+##
 ###################
 
 if __name__ == '__main__':

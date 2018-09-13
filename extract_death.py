@@ -51,10 +51,14 @@ options.add_argument("--excl", metavar="{File5}", type=str, default=None, help='
 # class Object(object):
 #    pass
 # args = Object()
-# args.out='D:\MSc projects\\2018\\Confounders\death_lungCancer'
-# args.html=r'D:\UkBiobank\Application 10035\\21204\ukb21204.html'
-# args.csv=r'D:\UkBiobank\Application 10035\\21204\ukb21204.csv'
-# args.codes='All'#['C34']
+# args.out='/media/storage/codes/BiobankRead-Bash'
+# args.html=r'/media/storage/UkBiobank/Application_236/R4528/ukb4528.html'
+# args.csv=r'/media/storage/UkBiobank/Application_236/R4528/ukb4528.csv'
+# args.codes=['I110',
+#'I132',
+#'I500',
+#'I501',
+#'I509']
 # args.primary=True
 # args.secondary=True
 ###################
@@ -67,29 +71,46 @@ def getcodes(UKBr, args):
         Codes=UKBr.read_basic_doc(codes)
     else:
         Codes = codes
-    print(Codes)
+    #print(Codes)
     Codes = UKBr.find_ICD10_codes(select=Codes)
     return Codes
 
 def count_codes(UKBr, df,args):
     codes_list=getcodes(UKBr, args)
-    ids = list(set(df['eid'].tolist()))
+    #ids = list(set(df['eid'].tolist()))
     cols = ['eid']+codes_list
     df_new=pd.DataFrame(columns=cols)
-    j=0
+    for c in df.columns[1::]:
+        new_ymp=pd.DataFrame(columns=['eid'])
+        for d in codes_list:
+            ymp=df[[str(d) in str(x) for x in df[c]]]
+            if(len(ymp)>0):
+                ymp_sub=pd.DataFrame()
+                ymp_sub['eid']=ymp['eid'].tolist()
+                ymp_sub[d]=1
+                new_ymp=pd.merge(new_ymp,ymp_sub,on='eid',how='outer')
+        if(len(new_ymp)>0):
+            df_new=pd.merge(df_new,new_ymp,on='eid',how='outer')
+        #df_new=pd.concat([df_new,new_ymp],ignore_index=False,sort=True)
+    for d in codes_list:
+        cols = [c for c in df_new.columns if str(d) in str(c)]
+        df_new[d]=df_new[cols].fillna(value=0).sum(axis=1)
+        df_new[d]=[1*(V>0) for V in df_new[d]]
+    df_new=df_new[['eid']+codes_list]
+    #j=0
     # Loop over eids
-    print(len(ids))
-    for i in ids:
-        # Select this eid
-        df_sub=df[df['eid']==i]
-        # tmp2 = data columns for this eid
-        codes_this=list(df_sub.iloc[0][1:len(df_sub.columns)-1])
-        # Get columns with matching codes as Boolean vector
-        # Note - C34 also matches C340 C341 etc
-        # Is this intended? YES
-        res = [i]+[int(x in codes_this) for x in codes_list]
-        df_new.loc[j]=res
-        j += 1
+    ##print(len(ids))
+    #for i in ids:
+    #    # Select this eid
+    #    df_sub=df[df['eid']==i]
+    #    # tmp2 = data columns for this eid
+    #    codes_this=list(df_sub.iloc[0][1:len(df_sub.columns)-1])
+    #    # Get columns with matching codes as Boolean vector
+    #    # Note - C34 also matches C340 C341 etc
+    #    # Is this intended? YES
+    #    res = [i]+[int(x in codes_this) for x in codes_list]
+    #    df_new.loc[j]=res
+    #    j += 1
     return df_new
 
 def merge_primary(df):
