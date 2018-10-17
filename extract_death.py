@@ -8,7 +8,6 @@ Created on Tue Jun  5 18:29:00 2018
 import argparse
 import pandas as pd
 import numpy as np
-import re
 
 '''Example run:
     python extract_death.py \
@@ -74,6 +73,37 @@ def getcodes(UKBr, args):
     #print(Codes)
     Codes = UKBr.find_ICD10_codes(select=Codes)
     return Codes
+
+# NEEDS SORRTING OUT
+# SHOULD BE POSSIBLE TO STRIP OUT MUCH OF THE LOOP
+# USING EG df.isin(codes_list) OR SIMILAR
+# I think the above reverse the logic
+# Maybe this:
+# df[df[colname]].str.contains(code)
+def count_codes_new(UKBr, df,args):
+    codes_list=getcodes(UKBr, args)
+    #ids = list(set(df['eid'].tolist()))
+    cols = ['eid']+codes_list
+    df_new=pd.DataFrame(columns=cols)
+    for c in df.columns[1::]:
+        new_ymp=pd.DataFrame(columns=['eid'])
+        df_new[c] = df[c]
+        for d in codes_list:
+            ymp = df[df[c].str.contains(d)==True]
+            if(len(ymp)>0):
+                ymp_sub=pd.DataFrame()
+                ymp_sub['eid']=ymp['eid'].tolist()
+                ymp_sub[d]=1
+                new_ymp=pd.merge(new_ymp,ymp_sub,on='eid',how='outer')
+        if(len(new_ymp)>0):
+            df_new=pd.merge(df_new,new_ymp,on='eid',how='outer')
+        #df_new=pd.concat([df_new,new_ymp],ignore_index=False,sort=True)
+    for d in codes_list:
+        cols = [c for c in df_new.columns if str(d) in str(c)]
+        df_new[d]=df_new[cols].fillna(value=0).sum(axis=1)
+        df_new[d]=[1*(V>0) for V in df_new[d]]
+    df_new=df_new[['eid']+codes_list]
+    return df_new
 
 def count_codes(UKBr, df,args):
     codes_list=getcodes(UKBr, args)

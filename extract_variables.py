@@ -12,6 +12,7 @@ import warnings
 import re
 import sys
 
+
 '''Example run:
     python extract_variables.py \
         --csv x/y/z.csv \
@@ -57,13 +58,13 @@ def str2boolorlist(v):
 parser = argparse.ArgumentParser(description="\n BiobankRead Extract_Variable. Does what it says hehe")
 
 in_opts = parser.add_argument_group(title='Input Files', description="Input files. The --csv and --html option are required")
-in_opts.add_argument("--csv", metavar="{File1}", type=str,required=False, default=None, help='Specify the csv file associated with the UKB application.')
+in_opts.add_argument("--csv", metavar="{File1}", type=str, required=False, default=None, help='Specify the csv file associated with the UKB application.')
 in_opts.add_argument("--html", metavar="{File2}", type=str,required=False, default=None, help='Specify the html file associated with the UKB application.')
 
 
 out_opts = parser.add_argument_group(title="Output formatting", description="Set the output directory and common name of files.")
 out_opts.add_argument("--vars", metavar="{File3}", type=str, nargs='+', help='Specify variables to extract', required=True)
-out_opts.add_argument("--out", metavar='PREFIX', type=str, help='Specify the name prefix to output files')
+out_opts.add_argument("--out", metavar='PREFIX', type=str, required=True, help='Specify the name prefix to output files')
 
 
 options = parser.add_argument_group(title="Optional input", description="Apply some level of selection on the data")
@@ -363,10 +364,13 @@ def produce_plots(df,args):
 #args.cov_corr=False
 #####
 if __name__ == '__main__':
+    
     args = parser.parse_args()
     namehtml=args.html
     namecsv=args.csv
     nameexcl = args.excl
+
+
     ### import Biobankread package
     sys.path.append('BiobankRead-Bash')
     # Note some issues with case of directory names on different systems

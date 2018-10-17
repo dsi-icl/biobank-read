@@ -79,7 +79,7 @@ class BiobankRead():
         return [dforig, dfstrip]        
 
 
-    def  getfilenames(self, html_file=None,csv_file=None, csv_exclude=None, tsv_file=None):
+    def getfilenames(self, html_file=None,csv_file=None, csv_exclude=None, tsv_file=None):
         fpname = 'UKBBpaths.txt'
         filedict = {'html' : html_file, 'csv': csv_file, 'excl' : csv_exclude, 'tsv' : tsv_file}
         fpdir1 = os.getcwd() # current working directory
@@ -215,8 +215,10 @@ class BiobankRead():
             
         # Apply exclusions to EID list
         if type(self.Eids_exclude) == pd.DataFrame:
+            # This results in a merge column containing "left_only" or "right_only"
             df = pd.merge(self.Eids_all, self.Eids_exclude, how='outer', indicator=True)
-            self.Eids_all = df.loc[df['_merge'] == 'left_only']['eid']
+            Eids_all_series = df.loc[df['_merge'] == 'left_only']['eid']
+            self.Eids_all = pd.DataFrame(data=Eids_all_series, columns=['eid'])
             Nold = self.N
             self.N = len(self.Eids_all)
             print( ' ', Nold-self.N, 'matched exclusions were made')
@@ -962,7 +964,7 @@ class BiobankRead():
         if type(select) is str:
             select = [select]
         for categ in select:
-            tmp = [x for x in codes_all if categ in x]
+            tmp = [x for x in codes_all if categ in x and not(categ.isspace() or (not categ))]
             for y in tmp:
                 icd10.append(y)
         icd10 = [x for x in icd10 if 'Block' not in x]

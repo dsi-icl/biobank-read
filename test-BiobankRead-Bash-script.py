@@ -414,27 +414,30 @@ variables = ['Encoded anonymised participant ID',
 # Set the script to test here
 scriptList = ['extract_variables.py', 'extract_death.py', 'extract_SR.py', 'HES_extract.py']
 scriptdic = {'VAR' : 0, 'DEATH' : 1, 'SR' : 2, 'HES' : 3}
-scriptnum = scriptdic['VAR']
+scriptnum = scriptdic['DEATH']
 
 # The name of the script to test
 scriptname = scriptList[scriptnum];
 
 
 # Where the data is stored
-csvpath = '/media/storage/UkBiobank/Application 236/R4528/ukb4528.csv'
-htmlpath =  '/media/storage/UkBiobank/Application 236/R4528/ukb4528.html'
-exclpath =  ''
-hespath = '/media/storage/UkBiobank/HES data/ukb_HES_236.tsv'
+#csvpath = '/media/storage/UkBiobank/Application 236/R4528/ukb4528.csv'
+#htmlpath =  '/media/storage/UkBiobank/Application 236/R4528/ukb4528.html'
+#exclpath =  ''
+#hespath = '/media/storage/UkBiobank/HES data/ukb_HES_236.tsv'
+
+csvpath  = 'Z:\\EABOAGYE\\Users\\wcrum\\Projects\\UKBB\\UKBB-data-2018\\ukb21204.csv'
+htmlpath = 'Z:\\EABOAGYE\\Users\\wcrum\\Projects\\UKBB\\UKBB-data-2018\\ukb21204.html'
+exclpath = 'Z:\\EABOAGYE\\Users\\wcrum\\Projects\\UKBB\\UKBB-data-2018\\w10035_20180503_exclusions.csv'
+hespath  = 'Z:\\EABOAGYE\\Users\\wcrum\\Projects\\UKBB\\UKBB-data-2018\\ukb.tsv'
 
 # Output
-<<<<<<< HEAD
-outpath = '/media/storage/codes/BiobankRead-Bash/'
-outname = 'testnewVARpartial'
-=======
+#outpath = '/media/storage/codes/BiobankRead-Bash/'
+#outname = 'testnewVARpartial'
 outpath = 'H:\\IC-Stuff\\software\\Biobank'
 outname = 'testnewVARfile'
->>>>>>> 352473d4503356840d7fcf9fc84615f7be15ae0f
 outfile = os.path.join(outpath, outname)
+
 
 # Construct script path and arguments for each script
 if scriptname == 'extract_variables.py':
@@ -442,7 +445,8 @@ if scriptname == 'extract_variables.py':
     varList = ['"Age when attended assessment centre"', '"Body mass index (BMI)"', '"Age high blood pressure diagnosed"']
     varString = ' '.join(varList)
     #varString = 'H:\\IC-Stuff\\software\\Biobank\\BiobankRead-Bash\\vars_test.txt'
-    filterList = ['"Age when attended assessment centre>50"', '"Age when attended assessment centre<70"', '"Body mass index (BMI)>=23"', '"Body mass index (BMI)<=30"']
+    #filterList = ['"Age when attended assessment centre>50"', '"Age when attended assessment centre<70"', '"Body mass index (BMI)>=23"', '"Body mass index (BMI)<=30"']
+    filterList = ['"Age when attended assessment centre>50"', '"Age when attended assessment centre<70"', '"BMI>=23"', '"BMI<=30"']
     # Command string
     '''
     bbreadargs = [scriptname, 
@@ -467,18 +471,20 @@ if scriptname == 'extract_variables.py':
                 ' --aver_visits False', 
                 ' --combine partial', 
                 ' --out ' + outfile]
+                
 elif scriptname == 'extract_death.py':
     # Data file for codes or use list e.g. ' --codes C34  C42'
-    codespath = 'H:\\IC-Stuff\\software\\Biobank\\codes1.txt'
+    codespath = 'H:\\IC-Stuff\\software\\Biobank\\codes.txt'
     # Command string
+    #            ' --excl '+ exclpath,
     bbreadargs = [scriptname, 
-                ' --csv '+csvpath, 
-                ' --html '+htmlpath, 
-                ' --codes '+codespath,
+                ' --csv '   + csvpath, 
+                ' --html '  + htmlpath, 
+                ' --codes ' + codespath,
                 ' --primary True', 
                 ' --secondary False',
-                ' --excl '+exclpath,
                 ' --out ' + outfile]
+    
 elif scriptname == 'extract_SR.py':
     # Command string
     # Note use of "" to prevent argsparse breaking up the disease string
@@ -517,12 +523,12 @@ else:
 # Note  append is required here
 subprocessargs = ['python.exe']
 subprocessargs.append(bbreadargs)
+print subprocessargs
 
 # Output command line
-print
-print(subprocessargs[0]+' '+' '.join(subprocessargs[1]))
+#subprocessargs[1]=' '.join(subprocessargs[1])
+#print subprocessargs
 
-subprocessargs[1]=' '.join(subprocessargs[1])
 #print
 #print type(subprocessargs[0]), type(subprocessargs[1])
 # Run as sub-process to ensure arguments are passed correctly
