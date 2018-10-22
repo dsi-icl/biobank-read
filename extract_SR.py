@@ -15,7 +15,7 @@ import pandas as pd
         --excl x/y/z.csv \
         --out <results folder> \
         --disease 'lung cancer' \ ## which self-reported diseases to extract
-        --SRcancer True \ ## parse self-repoted cancer OR non-cancer diseases
+        --SRcancer True \ ## parse self-reported cancer OR non-cancer diseases
         --baseline_only False \ ## Only keep data from baseline assessment centre
 '''
 

@@ -208,8 +208,8 @@ class BiobankRead():
         
         # Excluded EIDS
         self.Eids_exclude = None
-        if csv_exclude != None:
-            self.Eids_exclude = self.GetEIDs(csv_exclude)
+        if self.csv_exclude != None:
+            self.Eids_exclude = self.GetEIDs(self.csv_exclude)
             self.Nexcl = len(self.Eids_exclude)
             print(' Found', self.Nexcl, 'potential EIDS to exclude')
             
@@ -1080,7 +1080,7 @@ class BiobankRead():
        #new_Df['eid']=df['eid']
         res = []
         for ee in eids_unique:
-            tmp =  df[df['eid']==ee]
+            tmp =  df[df['eid']==ee].copy()
             res.append(len(tmp))
             #tmp['admidate'] = pd.to_datetime(tmp['admidate'])
             x = tmp[date].replace(np.nan,self.end_follow_up).min()
@@ -1096,7 +1096,7 @@ class BiobankRead():
         eids = list(set(df['eid'].tolist()))
         DF = pd.DataFrame(columns=['eid','After','first_date_aft'])
         for ee in eids:
-            tmp =  df[df['eid']==ee]
+            tmp = df[df['eid']==ee].copy()
             tmp_ass_date = assess_dates[assess_dates['eid']==ee]['assess_date'].iloc[0]
             tmp2= tmp[tmp[date]>tmp_ass_date]
             if len(tmp2)>0:

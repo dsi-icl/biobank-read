@@ -414,7 +414,7 @@ variables = ['Encoded anonymised participant ID',
 # Set the script to test here
 scriptList = ['extract_variables.py', 'extract_death.py', 'extract_SR.py', 'HES_extract.py']
 scriptdic = {'VAR' : 0, 'DEATH' : 1, 'SR' : 2, 'HES' : 3}
-scriptnum = scriptdic['DEATH']
+scriptnum = scriptdic['VAR']
 
 # The name of the script to test
 scriptname = scriptList[scriptnum];
@@ -435,7 +435,7 @@ hespath  = 'Z:\\EABOAGYE\\Users\\wcrum\\Projects\\UKBB\\UKBB-data-2018\\ukb.tsv'
 #outpath = '/media/storage/codes/BiobankRead-Bash/'
 #outname = 'testnewVARpartial'
 outpath = 'H:\\IC-Stuff\\software\\Biobank'
-outname = 'testnewVARfile'
+outname = 'testnewHESfile'
 outfile = os.path.join(outpath, outname)
 
 
@@ -443,10 +443,14 @@ outfile = os.path.join(outpath, outname)
 if scriptname == 'extract_variables.py':
     # Variables and conditions
     varList = ['"Age when attended assessment centre"', '"Body mass index (BMI)"', '"Age high blood pressure diagnosed"']
+    #varList = ['"Age"']
     varString = ' '.join(varList)
     #varString = 'H:\\IC-Stuff\\software\\Biobank\\BiobankRead-Bash\\vars_test.txt'
     #filterList = ['"Age when attended assessment centre>50"', '"Age when attended assessment centre<70"', '"Body mass index (BMI)>=23"', '"Body mass index (BMI)<=30"']
+    # NOTE FILTER STRINGS ARE SEARCHED FOR IN VARIABLES SO "BMI" MATCHES "Body mass index (BMI)"
+    # "Age" CAN BE USED TO ENSURE THAT AGE AT ALL SPECIFIED ASSESSMENTS CONTAINING AGE HAPPENED WITHIN THE RANGE
     filterList = ['"Age when attended assessment centre>50"', '"Age when attended assessment centre<70"', '"BMI>=23"', '"BMI<=30"']
+    #filterList = ['"Age>50"', '"Age<70"', '"BMI>=23"', '"BMI<=30"']
     # Command string
     '''
     bbreadargs = [scriptname, 

@@ -107,7 +107,7 @@ def count_codes(UKBr, df, args):
     j=0
     for i in ids:
         # Get the current id
-        df_sub=df[df['eid']==i]
+        df_sub=df[df['eid']==i].copy()
         # ICD10 codes belonging to this subject
         codes_this=list(set(df_sub[code_str].tolist()))
         # Codes which match the search list

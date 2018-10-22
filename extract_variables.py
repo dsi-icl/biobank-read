@@ -23,6 +23,7 @@ import sys
 (optionally)
         --baseline_only True\False (default=True)\
         --remove_missing True\False \
+        --remove_outliers True\False \
         --filter <list of conditions on variables in vars>, as is or in .txt file \
         --aver_visits True\False \
         --cov_corr True\False \
@@ -258,6 +259,8 @@ def filter_vars2(df, args):
         [dummy, thevar] = UKBr2.BiobankRead.clean_columns(thevar)
         condition=match.group(2)
         # Get matching variables in main dataframe for this condition
+        # NBNBNB THE CONDITION VARIABLE CAN BE A SUBSTRING OF THE FULL VARIABLE NAME
+        # EG. BMI will match "Body mass index (BMI)"
         matchvars = [x for x in dfcol if thevar in x]
         # Apply the condition
         for match in matchvars:
@@ -387,13 +390,17 @@ if __name__ == '__main__':
             raise ImportError('UKBr could not be loaded properly')
     Df=extract_the_things(UKBr, args)
     Df=float_to_cat(UKBr, Df)
-    final_name = args.out+'.csv'
-    print("Outputting to", final_name)
-    Df.to_csv(final_name,sep=',',index=None)
-#    except Exception as e:
-#        logging.error(e,exc_info=True)
-#        logging.info('Script did not work')
-    if args.cov_corr:
-        import seaborn as sns
-        print('produce covariance/corr of variables in nice plots')
-        produce_plots(Df,args)
+    if Df.shape[0] == 0:
+        print("ERROR - result data-frame has zero rows")
+        print("No ouput - please check variable selection and conditions")
+    else:
+        final_name = args.out+'.csv'
+        print("Outputting to", final_name)
+        Df.to_csv(final_name,sep=',',index=None)
+    #    except Exception as e:
+    #        logging.error(e,exc_info=True)
+    #        logging.info('Script did not work')
+        if args.cov_corr:
+            import seaborn as sns
+            print('produce covariance/corr of variables in nice plots')
+            produce_plots(Df,args)

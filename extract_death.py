@@ -87,19 +87,28 @@ def count_codes_new(UKBr, df,args):
     df_new=pd.DataFrame(columns=cols)
     for c in df.columns[1::]:
         new_ymp=pd.DataFrame(columns=['eid'])
-        df_new[c] = df[c]
+        df_new[c] = df[c].copy()
+        df_new = df.isin(codes_list)
+        df_new = df_new[1::]
+        
+        # Look for each code d in column c
         for d in codes_list:
             ymp = df[df[c].str.contains(d)==True]
             if(len(ymp)>0):
+                # Found some hits
                 ymp_sub=pd.DataFrame()
                 ymp_sub['eid']=ymp['eid'].tolist()
+                # Create column for current code
                 ymp_sub[d]=1
+                # Merge results for this code with master in new_ymp
                 new_ymp=pd.merge(new_ymp,ymp_sub,on='eid',how='outer')
         if(len(new_ymp)>0):
             df_new=pd.merge(df_new,new_ymp,on='eid',how='outer')
         #df_new=pd.concat([df_new,new_ymp],ignore_index=False,sort=True)
     for d in codes_list:
+        # Get columns containing code
         cols = [c for c in df_new.columns if str(d) in str(c)]
+        # Sum across columns containing code
         df_new[d]=df_new[cols].fillna(value=0).sum(axis=1)
         df_new[d]=[1*(V>0) for V in df_new[d]]
     df_new=df_new[['eid']+codes_list]
@@ -122,6 +131,8 @@ def count_codes(UKBr, df,args):
         if(len(new_ymp)>0):
             df_new=pd.merge(df_new,new_ymp,on='eid',how='outer')
         #df_new=pd.concat([df_new,new_ymp],ignore_index=False,sort=True)
+    #
+    #df_new_test = df.isin(codes_list)
     for d in codes_list:
         cols = [c for c in df_new.columns if str(d) in str(c)]
         df_new[d]=df_new[cols].fillna(value=0).sum(axis=1)
@@ -175,7 +186,7 @@ def extractdeath(UKBr, args):
         dead_df = UKBr.extract_variable(SR[0],baseline_only=False, dropNaN=True)
     dead_df.dropna(axis=0,how='all',subset=dead_df.columns[1::],inplace=True)
     if args.codes[0] != 'All':
-        dead_df = count_codes(UKBr, dead_df,args)
+        dead_df = count_codes(UKBr, dead_df, args)
         dead_df['all_cause'] = dead_df[dead_df.columns[1::]].sum(axis=1)
         dead_df=dead_df[dead_df.all_cause !=0]
     else:
