@@ -49,7 +49,7 @@ class BiobankRead():
     # needed to handle some funny variable names
     special_char = "~`!@#$%^&*()-+={}[]:>;',</?*-+" 
     
-    defloc = os.path.join('D:\\', 'Uk Biobank', 'Application ')
+    defloc = os.path.join('Uk Biobank', 'Application ')
     
     # No longer required - URL extracted directly from data-set
     #sub_link  = 'http://biobank.ctsu.ox.ac.uk/crystal/field.cgi?id='
@@ -966,6 +966,7 @@ class BiobankRead():
             for y in tmp:
                 icd10.append(y)
         icd10 = [x for x in icd10 if 'Block' not in x]
+        icd10 = [x for x in icd10 if 'Chapter' not in x]
         return icd10
         
     def find_ICD9_codes(self,select=None):

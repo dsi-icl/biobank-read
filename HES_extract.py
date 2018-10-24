@@ -94,27 +94,48 @@ def count_codes(UKBr, df, args):
         df = data frame of UKBB subjects who matched an ICD10 HES code search.
         
     """
-    # e.g. code_conv = 10
+#    # e.g. code_conv = 10
     code_conv = re.match('ICD(\d+)',args.codeType).group(1)
     code_str = 'diag_icd'+code_conv
-    # e.g. tmp1 = ['C498', 'C499', 'C496', 'C494', 'C495', 'C492', 'C493', 'C490', 'C491']
-    codes_list=list(set(df['diag_icd'+code_conv].tolist()))
-    # All the patient ids
-    ids = list(set(df['eid'].tolist()))
-    # e.g. cols = ['eid', 'C498', 'C499', 'C496', 'C494', 'C495', 'C492', 'C493', 'C490', 'C491']
+#    # e.g. tmp1 = ['C498', 'C499', 'C496', 'C494', 'C495', 'C492', 'C493', 'C490', 'C491']
+    codes_list=list(set(df[code_str].tolist()))
+#    # All the patient ids
+#    ids = list(set(df['eid'].tolist()))
+#    # e.g. cols = ['eid', 'C498', 'C499', 'C496', 'C494', 'C495', 'C492', 'C493', 'C490', 'C491']
+#    cols = ['eid']+codes_list
+#    df_new=pd.DataFrame(columns=cols)
+#    j=0
+#    for i in ids:
+#        # Get the current id
+#        df_sub=df[df['eid']==i]
+#        # ICD10 codes belonging to this subject
+#        codes_this=list(set(df_sub[code_str].tolist()))
+#        # Codes which match the search list
+#        res = [i]+[int(x in codes_this) for x in codes_list]
+#        # Insert in data-frame
+#        df_new.loc[j]=res
+#        j += 1
+    ########
+    #ids = list(set(df['eid'].tolist()))
     cols = ['eid']+codes_list
     df_new=pd.DataFrame(columns=cols)
-    j=0
-    for i in ids:
-        # Get the current id
-        df_sub=df[df['eid']==i]
-        # ICD10 codes belonging to this subject
-        codes_this=list(set(df_sub[code_str].tolist()))
-        # Codes which match the search list
-        res = [i]+[int(x in codes_this) for x in codes_list]
-        # Insert in data-frame
-        df_new.loc[j]=res
-        j += 1
+    for c in df.columns[1::]:
+        new_ymp=pd.DataFrame(columns=['eid'])
+        for d in codes_list:
+            ymp=df[[str(d) in str(x) for x in df[c]]]
+            if(len(ymp)>0):
+                ymp_sub=pd.DataFrame()
+                ymp_sub['eid']=ymp['eid'].tolist()
+                ymp_sub[d]=1
+                new_ymp=pd.merge(new_ymp,ymp_sub,on='eid',how='outer')
+        if(len(new_ymp)>0):
+            df_new=pd.merge(df_new,new_ymp,on='eid',how='outer')
+        #df_new=pd.concat([df_new,new_ymp],ignore_index=False,sort=True)
+    for d in codes_list:
+        cols = [c for c in df_new.columns if str(d) in str(c)]
+        df_new[d]=df_new[cols].fillna(value=0).sum(axis=1)
+        df_new[d]=[1*(V>0) for V in df_new[d]]
+    df_new=df_new[['eid']+codes_list]
     return df_new
 
 ###################
