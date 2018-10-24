@@ -12,6 +12,7 @@ import warnings
 import re
 import sys
 
+
 '''Example run:
     python extract_variables.py \
         --csv x/y/z.csv \
@@ -22,6 +23,7 @@ import sys
 (optionally)
         --baseline_only True\False (default=True)\
         --remove_missing True\False \
+        --remove_outliers True\False \
         --filter <list of conditions on variables in vars>, as is or in .txt file \
         --aver_visits True\False \
         --cov_corr True\False \
@@ -57,13 +59,13 @@ def str2boolorlist(v):
 parser = argparse.ArgumentParser(description="\n BiobankRead Extract_Variable. Does what it says hehe")
 
 in_opts = parser.add_argument_group(title='Input Files', description="Input files. The --csv and --html option are required")
-in_opts.add_argument("--csv", metavar="{File1}", type=str,required=False, default=None, help='Specify the csv file associated with the UKB application.')
+in_opts.add_argument("--csv", metavar="{File1}", type=str, required=False, default=None, help='Specify the csv file associated with the UKB application.')
 in_opts.add_argument("--html", metavar="{File2}", type=str,required=False, default=None, help='Specify the html file associated with the UKB application.')
 
 
 out_opts = parser.add_argument_group(title="Output formatting", description="Set the output directory and common name of files.")
 out_opts.add_argument("--vars", metavar="{File3}", type=str, nargs='+', help='Specify variables to extract', required=True)
-out_opts.add_argument("--out", metavar='PREFIX', type=str, help='Specify the name prefix to output files')
+out_opts.add_argument("--out", metavar='PREFIX', type=str, required=True, help='Specify the name prefix to output files')
 
 
 options = parser.add_argument_group(title="Optional input", description="Apply some level of selection on the data")
@@ -257,6 +259,8 @@ def filter_vars2(df, args):
         [dummy, thevar] = UKBr2.BiobankRead.clean_columns(thevar)
         condition=match.group(2)
         # Get matching variables in main dataframe for this condition
+        # NBNBNB THE CONDITION VARIABLE CAN BE A SUBSTRING OF THE FULL VARIABLE NAME
+        # EG. BMI will match "Body mass index (BMI)"
         matchvars = [x for x in dfcol if thevar in x]
         # Apply the condition
         for match in matchvars:
@@ -363,10 +367,13 @@ def produce_plots(df,args):
 #args.cov_corr=False
 #####
 if __name__ == '__main__':
+    
     args = parser.parse_args()
     namehtml=args.html
     namecsv=args.csv
     nameexcl = args.excl
+
+
     ### import Biobankread package
     sys.path.append('BiobankRead-Bash')
     # Note some issues with case of directory names on different systems
@@ -383,13 +390,17 @@ if __name__ == '__main__':
             raise ImportError('UKBr could not be loaded properly')
     Df=extract_the_things(UKBr, args)
     Df=float_to_cat(UKBr, Df)
-    final_name = args.out+'.csv'
-    print("Outputting to", final_name)
-    Df.to_csv(final_name,sep=',',index=None)
-#    except Exception as e:
-#        logging.error(e,exc_info=True)
-#        logging.info('Script did not work')
-    if args.cov_corr:
-        import seaborn as sns
-        print('produce covariance/corr of variables in nice plots')
-        produce_plots(Df,args)
+    if Df.shape[0] == 0:
+        print("ERROR - result data-frame has zero rows")
+        print("No ouput - please check variable selection and conditions")
+    else:
+        final_name = args.out+'.csv'
+        print("Outputting to", final_name)
+        Df.to_csv(final_name,sep=',',index=None)
+    #    except Exception as e:
+    #        logging.error(e,exc_info=True)
+    #        logging.info('Script did not work')
+        if args.cov_corr:
+            import seaborn as sns
+            print('produce covariance/corr of variables in nice plots')
+            produce_plots(Df,args)

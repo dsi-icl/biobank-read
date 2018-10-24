@@ -14,7 +14,7 @@ import bs4
     python search_var.py \
         --html x/y/z.html \
         --keywords kw1 kw2 ... kwn
-        --match or
+        --match or / and
 '''
 
 parser = argparse.ArgumentParser(description="\n BiobankRead-Bash search_var. ")
@@ -118,6 +118,9 @@ if __name__ == '__main__':
     namehtml=args.html
     searchlist = args.keywords
     match = args.match
+    if isinstance(match, list):
+        match = match[0]
+    
     match = match.lower()
     
     filedict = getfilenames(html_file=namehtml)

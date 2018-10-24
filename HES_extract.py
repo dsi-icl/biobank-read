@@ -136,6 +136,17 @@ def count_codes(UKBr, df, args):
         df_new[d]=df_new[cols].fillna(value=0).sum(axis=1)
         df_new[d]=[1*(V>0) for V in df_new[d]]
     df_new=df_new[['eid']+codes_list]
+    j=0
+    for i in ids:
+        # Get the current id
+        df_sub=df[df['eid']==i].copy()
+        # ICD10 codes belonging to this subject
+        codes_this=list(set(df_sub[code_str].tolist()))
+        # Codes which match the search list
+        res = [i]+[int(x in codes_this) for x in codes_list]
+        # Insert in data-frame
+        df_new.loc[j]=res
+        j += 1
     return df_new
 
 ###################
