@@ -69,11 +69,10 @@ out_opts.add_argument("--out", metavar='PREFIX', type=str, required=True, help='
 
 
 options = parser.add_argument_group(title="Optional input", description="Apply some level of selection on the data")
-options.add_argument("--baseline_only", type=str2bool, nargs='?', const=True, default=True,  help="Only keep data from baseline assessment centre")
-options.add_argument("--remove_missing", default=False, nargs='+', type=str,help="Remove subjects with values nan, -3 or -7 for any variable. Can specify which variables to perform that for")
 options.add_argument("--remove_outliers", type=str2bool, default=False, nargs='+',action='store',help="Remove subjects with values beyond x std dev for any cont. variable. Format:[std.dev,one-sided,vars names...]")
 options.add_argument("--filter", default=False, nargs='+', metavar="{File4}",type=str,action='store',help="Filter some variables based on conditions. Keep your requests simple ")
 options.add_argument("--excl", metavar="{File5}", type=str, default=None, help='Specify the csv file of EIDs to be excluded.')
+options.add_argument("--visit", metavar="0/1/2/all", default='all', help='Extract data for all visits, or baseline, 1st or 2nd re-visit only.')
 options.add_argument("--combine", metavar="inner/partial/outer", type=str, default='outer', help='Specify how extracted variable data is combined for output.')
 
 sums = parser.add_argument_group(title="Optional request for basic summary", description="Perform mean /cov/ corr/ dist plots for the data")
@@ -295,14 +294,16 @@ def extract_the_things(UKBr, args):
     """
     if UKBr.is_doc(args.vars[0]):
         args.vars=UKBr.read_basic_doc(args.vars[0])
-    if args.baseline_only:
-        print('Baseline visit data only')
+#    if args.baseline_only:
+#        print('Baseline visit data only')
     # Does keyword translation and returns actual variable names
     stuff=actual_vars(UKBr, args.vars)
-    Df = UKBr.extract_many_vars(stuff,baseline_only=args.baseline_only, combine=args.combine)
-    if args.remove_missing:
-        print('Remove all values marked as "nan", "-3" and "-7"')
-        Df = remove(UKBr, Df,args)
+    Df = UKBr.extract_many_vars(stuff,baseline_only=False, combine=args.combine)
+    args.visit=str(args.visit)
+    if args.visit in ['0','1','2']:
+        tmp=UKBr.vars_by_visits(col_names=Df.columns.tolist(), visit=int(args.visit))
+        tmp=['eid']+tmp
+        Df=Df[tmp]
     if args.remove_outliers:
         print('Remove outliers for cont variables')
         Df = outliers(UKBr, Df,args)
@@ -313,7 +314,7 @@ def extract_the_things(UKBr, args):
         print('Filter variables based on condition')
         if UKBr.is_doc(args.filter):
             args.filter=UKBr.read_basic_doc(args.filter)
-        Df = filter_vars2(Df,args)#filter_vars2 - Bill's
+        Df = filter_vars(Df,args)#filter_vars2 - Bill's
     return Df
 
 
@@ -352,20 +353,21 @@ def produce_plots(df,args):
     return 
 
 ###### for testing on desktop ONLY!! #####
-#class Object(object):
-#    pass
-#args = Object()
-#args.out='test1'
-#args.vars=['Sex','Age assessment','BMI']#['Pulse rate']#
-#args.baseline_only=False
-#args.remove_missing=True
-#args.aver_visits=False
-#args.remove_outliers=True
-#args.filter=['Age assessment<70','Age assessment>=40','BMI>=25']#False#
-#args.html='D:\UkBiobank\Application 10035\\21204\ukb21204.html'
-#args.csv='D:\UkBiobank\Application 10035\\21204\ukb21204.csv'
-#args.cov_corr=False
-#####
+class Object(object):
+    pass
+args = Object()
+args.out='test1'
+args.vars=['Sex','Age assessment','BMI']#['Pulse rate']#
+args.visit='all'
+args.aver_visits=False
+args.remove_outliers=True
+args.filter=['Age assessment<70','Age assessment>=40','BMI>=25']#False#
+args.html='/media/storage/UkBiobank/Application_10035/21204/ukb21204.html'
+args.csv='/media/storage/UkBiobank/Application_10035/21204/ukb21204.csv'
+args.cov_corr=False
+args.excl=None
+args.combine='outer'
+####
 if __name__ == '__main__':
     
     args = parser.parse_args()
@@ -390,6 +392,7 @@ if __name__ == '__main__':
             raise ImportError('UKBr could not be loaded properly')
     Df=extract_the_things(UKBr, args)
     Df=float_to_cat(UKBr, Df)
+    
     if Df.shape[0] == 0:
         print("ERROR - result data-frame has zero rows")
         print("No ouput - please check variable selection and conditions")

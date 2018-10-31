@@ -770,8 +770,8 @@ class BiobankRead():
             if not res is None:
                 V1.append(res.group(0))
         return V1
-    
 
+    
     def rename_columns(self, df=None,key=None,option_str=True, baseline_only=False):
         # rename the columns of a data frame with something sensible
         col_names = df.columns.tolist()
