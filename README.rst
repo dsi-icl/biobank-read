@@ -58,6 +58,12 @@ You must have the following installed to execute the files:
 
 You are strongly adviced to use this package as part of an anaconda_ environment formatted to run python 3.6 with all the aformentioned dependencies.
 
+Example:
+::
+   conda create -n biobankread python=3.6
+   conda activate biobankread
+   conda install -y pandas beautifulSoup4 urllib3 seaborn
+
 ############
 Usage
 ############
