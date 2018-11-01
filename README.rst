@@ -83,8 +83,7 @@ These files are designed to be called from a command line terminal as follow:
         --vars <list of variables>, in .txt file \
         --out <directory name> x1\y1 \
         #### (optionally)
-        --baseline_only True\False (default=True)\
-        --remove_missing True\False \
+        --visit 0\1\2\'all' \ # default='all'. Extract data from all visits, or baseline only (0), 1st (1) or 2nd re-visit (2)
         --filter <list of conditions on variables in vars>, in .txt file \
         --aver_visits True\False \
         --cov_corr True\False \
@@ -106,7 +105,7 @@ These files are designed to be called from a command line terminal as follow:
         --out <results folder> \
         --disease '<something, in .txt file>' \ ## which self-reported diseases to extract
         --SRcancer True \ ## parse self-repoted cancer OR non-cancer diseases
-        --baseline_only False & ## Only keep data from baseline assessment centre
+        --visit 0\1\2\'all' \ # default='all'. Extract data from all visits, or baseline only (0), 1st (1) or 2nd re-visit (2)
         
      python HES_extract.py \
         --csv <csv file> \
