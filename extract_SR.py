@@ -16,7 +16,7 @@ import pandas as pd
         --out <results folder> \
         --disease 'lung cancer' \ ## which self-reported diseases to extract
         --SRcancer True \ ## parse self-reported cancer OR non-cancer diseases
-        --baseline_only False \ ## Only keep data from baseline assessment centre
+        --visit 0/1/2/'all' \ # # Default: all. Keep all visits, or just baseline, 1st or 2nd revisit
 '''
 
 # Function to deal nicely with Boolean parser options
@@ -41,7 +41,7 @@ out_opts.add_argument("--disease",  metavar="{File3}",nargs='+',required=True, t
 out_opts.add_argument("--SRcancer", default=False, type=str2bool, help='Cancer or Non-cancer')
 
 options = parser.add_argument_group(title="Optional input", description="Apply some level of selection on the data")
-options.add_argument("--baseline_only", type=str2bool, nargs='?', const=True, default=True,  help="Only keep data from baseline assessment centre")
+options.add_argument("--visit", metavar="0/1/2/all", default='all', help='Extract data for all visits, or baseline, 1st or 2nd re-visit only.')
 options.add_argument("--excl", metavar="{File5}", type=str, default=None, help='Specify the csv file of EIDs to be excluded.')
 
 def num_codes(UKBr, args):
@@ -85,8 +85,13 @@ def extract_SR_stuff(UKBr, args):
     print(SR)
     if SR is None:
         raise ValueError('Variable '+val+' not present in application file')
-    SR_df = UKBr.extract_variable(SR[0], baseline_only=args.baseline_only,dropNaN=True)
+    SR_df = UKBr.extract_variable(SR[0], baseline_only=False,dropNaN=True)
     print('Df extracted')
+    args.visit=str(args.visit)
+    if args.visit in ['0','1','2']:
+        tmp=UKBr.vars_by_visits(col_names=SR_Df.columns.tolist(), visit=int(args.visit))
+        tmp=['eid']+tmp
+        SR_Df=SR_Df[tmp]
     SR_df.dropna(axis=0,how='all',subset=SR_df.columns[1::],inplace=True)
     print(len(SR_df))
     SR_df=count_codes(UKBr, SR_df,args)

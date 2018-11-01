@@ -21,8 +21,7 @@ import sys
         --vars <list of variables>, as is or in .txt file \
         --out <directory name> x1\y1 \
 (optionally)
-        --baseline_only True\False (default=True)\
-        --remove_missing True\False \
+	--visit 0/1/2/'all/ \ # Default: all. Keep all visits, or just baseline, 1st or 2nd revisit
         --remove_outliers True\False \
         --filter <list of conditions on variables in vars>, as is or in .txt file \
         --aver_visits True\False \
@@ -220,7 +219,7 @@ def filter_vars(df,args):
         if len(Ys)==0:
             Ys = whitespace_search(df_sub['Vars'].loc[i],df.columns.tolist())
         for y in Ys:
-            df = df[eval('df["'+str(y)+'"]'+df_sub["conds"].loc[i])]
+            df = df[eval('(df["'+str(y)+'"]'+df_sub["conds"].loc[i]+') | (df["'+str(y)+'"].isna())')] # avoids dropping Na systematically
     return df
 
 
@@ -266,7 +265,7 @@ def filter_vars2(df, args):
             # Apply condition
             thiscondition = match+condition
             try:
-                df = df[df.eval(thiscondition)]
+                df = df[(df.eval(thiscondition)) | df.isna()]
                 print('Applied condition', thiscondition)
             except Exception as e:
                 print('condition', thiscondition, 'not found/evaluated in dataframe')    
@@ -353,20 +352,20 @@ def produce_plots(df,args):
     return 
 
 ###### for testing on desktop ONLY!! #####
-class Object(object):
-    pass
-args = Object()
-args.out='test1'
-args.vars=['Sex','Age assessment','BMI']#['Pulse rate']#
-args.visit='all'
-args.aver_visits=False
-args.remove_outliers=True
-args.filter=['Age assessment<70','Age assessment>=40','BMI>=25']#False#
-args.html='/media/storage/UkBiobank/Application_10035/21204/ukb21204.html'
-args.csv='/media/storage/UkBiobank/Application_10035/21204/ukb21204.csv'
-args.cov_corr=False
-args.excl=None
-args.combine='outer'
+#class Object(object):
+#    pass
+#args = Object()
+#args.out='test1'
+#args.vars=['Sex','Age assessment','BMI']#['Pulse rate']#
+#args.visit='all'
+#args.aver_visits=False
+#args.remove_outliers=True
+#args.filter=['Age assessment<70','Age assessment>=40','BMI>=25']#False#
+#args.html='/media/storage/UkBiobank/Application_10035/21204/ukb21204.html'
+#args.csv='/media/storage/UkBiobank/Application_10035/21204/ukb21204.csv'
+#args.cov_corr=False
+#args.excl=None
+#args.combine='outer'
 ####
 if __name__ == '__main__':
     

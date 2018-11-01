@@ -900,10 +900,11 @@ class BiobankRead():
             cols = cols[1::] # remove eids
         new_Df = df
         for var in cols:
+	    placeholder=new_Df[var].fillna(value=new_Df[var].mean()) # avoids dropping out NaN
             if not one_sided:
-                new_Df=new_Df[((new_Df[var]-new_Df[var].mean())/new_Df[var].std()).abs()<lim]
+                new_Df=new_Df[((placeholder-new_Df[var].mean())/new_Df[var].std()).abs()<lim]
             else:
-                new_Df=new_Df[((new_Df[var]-new_Df[var].mean())/new_Df[var].std())<lim]
+                new_Df=new_Df[((placeholder-new_Df[var].mean())/new_Df[var].std())<lim]
         return new_Df
     
     def find_SR_codes(self,select=None,cancer=True):
