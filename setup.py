@@ -5,7 +5,7 @@ import os
 import glob
 import itertools
 
-import setuptools
+#import setuptools
 from setuptools import setup
 
 #######

@@ -21,7 +21,7 @@ import sys
         --vars <list of variables>, as is or in .txt file \
         --out <directory name> x1\y1 \
 (optionally)
-	--visit 0/1/2/'all/ \ # Default: all. Keep all visits, or just baseline, 1st or 2nd revisit
+    	--visit 0/1/2/'all/ \ # Default: all. Keep all visits, or just baseline, 1st or 2nd revisit
         --remove_outliers True\False \
         --filter <list of conditions on variables in vars>, as is or in .txt file \
         --aver_visits True\False \
@@ -187,11 +187,10 @@ def outliers(UKBr, Df, args):
     if len(df_temp)==0:
         warnings.warn('Selected variables are not continuous')
     stuff=df_temp['vars'].tolist()
-    Df2=pd.DataFrame(data=Df['eid'])
     for Y in stuff:
-        cols = ['eid'] + [x for x in Df.columns.tolist() if Y in x]
-        Df2=UKBr.remove_outliers(df=Df,cols=cols,lim=std,one_sided=onesided) 
-    return Df2
+        cols = [x for x in Df.columns.tolist() if Y in x]
+        Df=UKBr.remove_outliers(df=Df,cols=cols,lim=std,one_sided=onesided) 
+    return Df
 
 def filter_vars(df,args):
     df_sub=pd.DataFrame(columns={'Vars','conds'})
@@ -351,22 +350,24 @@ def produce_plots(df,args):
     sns_plot.savefig(args.out+'_corrPlot.png')
     return 
 
-###### for testing on desktop ONLY!! #####
-#class Object(object):
-#    pass
-#args = Object()
-#args.out='test1'
-#args.vars=['Sex','Age assessment','BMI']#['Pulse rate']#
-#args.visit='all'
-#args.aver_visits=False
-#args.remove_outliers=True
-#args.filter=['Age assessment<70','Age assessment>=40','BMI>=25']#False#
-#args.html='/media/storage/UkBiobank/Application_10035/21204/ukb21204.html'
-#args.csv='/media/storage/UkBiobank/Application_10035/21204/ukb21204.csv'
-#args.cov_corr=False
-#args.excl=None
-#args.combine='outer'
-####
+##### for testing on desktop ONLY!! #####
+class Object(object):
+    pass
+args = Object()
+args.out='test1'
+args.vars=['Sex','Age assessment','BMI']#['Pulse rate']#
+args.visit=0#'all'
+args.aver_visits=False
+args.remove_outliers=True#False#
+args.filter=False#['Age assessment<70','Age assessment>=40','BMI>=25']#
+args.html='/media/storage/UkBiobank/Application_10035/21204/ukb21204.html'
+args.csv='/media/storage/UkBiobank/Application_10035/21204/ukb21204.csv'
+args.cov_corr=False
+args.excl=None
+args.combine='outer'
+###
+###
+
 if __name__ == '__main__':
     
     args = parser.parse_args()
