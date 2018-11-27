@@ -194,10 +194,12 @@ def outliers(UKBr, Df, args):
 
 def filter_vars(df,args):
     df_sub=pd.DataFrame(columns={'Vars','conds'})
+        
     for cond in args.filter:
         #\S{1, 2} = 1-2 non-whitespace characters
         print(cond)
         match=re.search('([a-zA-Z0-9\s]+)(\S{1,2}\d+)',cond)
+        match=re.search(r'([^=<>]*)([<=>][=]?[0-9]+(.[0-9]+)?)',cond)
         thevar=match.group(1)
         condition=match.group(2)
         # This adds rows under specified column headings
@@ -206,6 +208,7 @@ def filter_vars(df,args):
         #    1    BMI     <99
         # etc
         df_sub=df_sub.append({'Vars':thevar,'conds':condition},ignore_index=True)
+    print df_sub    
     # sanity check - make sure condition vars match extracted vars
     overlap=list(set(df_sub['Vars'])&set(args.vars))
     if len(overlap)==0:
@@ -213,12 +216,21 @@ def filter_vars(df,args):
     # Select condition rows where variables have been extracted
     df_sub=df_sub[[x in overlap for x in df_sub['Vars']]]
     # Apply filter
-    for i in range(len(df_sub)):
+    
+    rowslist = list(df_sub.index)
+    for i in rowslist:
+        # Get cases for this variable
         Ys = [x for x in df.columns.tolist() if df_sub['Vars'].loc[i] in x]
         if len(Ys)==0:
             Ys = whitespace_search(df_sub['Vars'].loc[i],df.columns.tolist())
+        # Apply condition
         for y in Ys:
-            df = df[eval('(df["'+str(y)+'"]'+df_sub["conds"].loc[i]+') | (df["'+str(y)+'"].isna())')] # avoids dropping Na systematically
+            evalstring = '(df["'+str(y)+'"]'+df_sub['conds'].loc[i]+') | (df["'+str(y)+'"].isnull())'
+            print evalstring
+            df = df[eval(evalstring)] # avoids dropping Na systematically
+        
+
+
     return df
 
 
