@@ -30,6 +30,8 @@ import sys
                     inner = all extracted variables valid for each eid
                     outer = values for all eids returned
                     partial = at least one extracted variable must be valid
+        --experimental True\False   (False) 
+                    use new faster multi-variable extraction function
 '''
 
 # Function to deal nicely with Boolean parser options
@@ -77,6 +79,9 @@ options.add_argument("--combine", metavar="inner/partial/outer", type=str, defau
 sums = parser.add_argument_group(title="Optional request for basic summary", description="Perform mean /cov/ corr/ dist plots for the data")
 sums.add_argument("--aver_visits",default=False,type=str2boolorlist,help="get average measurement per visit")
 sums.add_argument("--cov_corr",default=False,type=str2bool,help="Produce extra file of cov/corr between variables. Will have same location and similar name to main output file")
+
+
+options.add_argument("--experimental", type=str2bool, default=False, nargs='+',action='store',help="Use experimental functions which may be more efficient ... at your own risk!")
 
 ########################################################
 
@@ -308,12 +313,11 @@ def extract_the_things(UKBr, args):
 #        print('Baseline visit data only')
     # Does keyword translation and returns actual variable names
     stuff=actual_vars(UKBr, args.vars)
-    Df = UKBr.extract_many_vars(stuff,baseline_only=False, combine=args.combine)
-    args.visit=str(args.visit)
-    if args.visit in ['0','1','2']:
-        tmp=UKBr.vars_by_visits(col_names=Df.columns.tolist(), visit=int(args.visit))
-        tmp=['eid']+tmp
-        Df=Df[tmp]
+    if args.experimental:
+        print('Using EXPERIMENTAL variable extraction - please check results')
+        Df = UKBr.extract_variables_to_df(stuff, baseline_only=False, combine=args.combine, visit=args.visit)
+    else:
+        Df = UKBr.extract_many_vars(stuff,baseline_only=False, combine=args.combine, visit=args.visit)
     if args.remove_outliers:
         print('Remove outliers for cont variables')
         Df = outliers(UKBr, Df,args)
@@ -386,6 +390,7 @@ if __name__ == '__main__':
     namehtml=args.html
     namecsv=args.csv
     nameexcl = args.excl
+    args.visit=str(args.visit)
 
 
     ### import Biobankread package
