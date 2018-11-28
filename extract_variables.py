@@ -315,9 +315,9 @@ def extract_the_things(UKBr, args):
     stuff=actual_vars(UKBr, args.vars)
     if args.experimental:
         print('Using EXPERIMENTAL variable extraction - please check results')
-        Df = UKBr.extract_variables_to_df(stuff, baseline_only=False, combine=args.combine, visit=args.visit)
+        Df = UKBr.extract_variables_to_df(stuff, combine=args.combine, visit=args.visit)
     else:
-        Df = UKBr.extract_many_vars(stuff,baseline_only=False, combine=args.combine, visit=args.visit)
+        Df = UKBr.extract_many_vars(stuff, combine=args.combine, visit=args.visit)
     if args.remove_outliers:
         print('Remove outliers for cont variables')
         Df = outliers(UKBr, Df,args)

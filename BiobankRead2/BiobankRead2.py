@@ -335,7 +335,7 @@ class BiobankRead():
         #Ds['eid']=[str(e) for e in Ds['eid']]
         return Ds   
 
-    def extract_variable(self, variable=None, baseline_only=False, dropNaN=False, visit='all'):
+    def extract_variable(self, variable=None, dropNaN=False, visit='all'):
         '''
         Extracts a single specified variable  (input)
         Returns data for first visit only if baseline_only == True
@@ -395,15 +395,7 @@ class BiobankRead():
             key=self.vars_by_visits(col_names=key, visit=int(visit), delim='-')
            
         everything = pd.read_csv(self.csv_file, usecols=key, nrows=self.N)
-        
-        #na_filter=False)
-        # drop columns of data not collected at baseline 
-        if baseline_only:
-            cols = everything.columns
-            keep = ['0.' in x for x in cols]
-            keep[0] = True # always keep eid column
-            everything = everything[cols[keep]]
-            
+                    
         if dropNaN:
             #tmp = ~everything.isnull().any(axis=1)
             #everything = everything[tmp]
@@ -491,8 +483,7 @@ class BiobankRead():
 
         # Filter for specific visit        
         if visit in ['0', '1', '2']:
-            key=self.vars_by_visits(col_names=key, visit=int(visit), delim='-')
-        
+            key=['eid']+self.vars_by_visits(col_names=key, visit=int(visit), delim='-')
         everything = pd.read_csv(self.csv_file, usecols=key, nrows=self.N)
         
         # Rename columns for variable names rather than numbers
@@ -634,7 +625,7 @@ class BiobankRead():
 
 
     def extract_many_vars(self, varnames=None,
-                          dropNaN=False,spaces=False,baseline_only=False, combine='outer', visit='all'):
+                          dropNaN=False,spaces=False, combine='outer', visit='all'):
         '''
         Extract variables for several pre-specified variable names 
         Supply these as keywords=[var1, var2, ...]
@@ -666,13 +657,13 @@ class BiobankRead():
         for var in varnames:
             print(var)
             # Get variable
-            DBP = self.extract_variable(variable=var, baseline_only=baseline_only, dropNaN=dropNaN, visit=visit)
+            DBP = self.extract_variable(variable=var, dropNaN=dropNaN, visit=visit)
 
             # Partition name for column naming
             if spaces:
                 b,k,a = var.partition(' ')
                 var = b
-            DBP = self.rename_columns(DBP, var, baseline_only=baseline_only)
+            DBP = self.rename_columns(DBP, var)
             
             # Get rid of NaNs
             if dropNaN:
