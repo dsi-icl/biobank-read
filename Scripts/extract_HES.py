@@ -4,6 +4,8 @@ Created on Tue May  8 17:53:41 2018
 
 """
 
+import os
+import sys
 import argparse
 import pandas as pd
 import re
@@ -174,19 +176,16 @@ if __name__ == '__main__':
     nameexcl = args.excl
             
     ### import Biobankread package
-    # sys.path.append('D:\new place\Postdoc\python\BiobankRead-Bash')
+    updatepath = os.path.join(os.path.dirname(os.path.abspath('__file__')), '..')
+    sys.path.append(updatepath)
+    # Note some issues with case of directory names on different systems
     try:
-        import biobankRead2.BiobankRead2 as UKBr2
+        import BiobankRead2.BiobankRead2 as UKBr2
         UKBr = UKBr2.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
         print("BBr loaded successfully")
     except:
-        try:
-            import BiobankRead2.BiobankRead2 as UKBr2
-            UKBr = UKBr2.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
-            print("BBr loaded successfully")
-        except:
-            raise ImportError('UKBr could not be loaded properly')
-            
+        raise ImportError('UKBr could not be loaded properly')
+
     # Read the HES data-file
     nametsv=args.tsv
     if nametsv == None:
