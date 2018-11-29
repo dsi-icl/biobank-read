@@ -392,7 +392,7 @@ class BiobankRead():
             key.append(tmp) 
             
         if visit in ['0', '1', '2']:
-            key=self.vars_by_visits(col_names=key, visit=int(visit), delim='-')
+            key=['eid']+self.vars_by_visits(col_names=key, visit=int(visit), delim='-')
            
         everything = pd.read_csv(self.csv_file, usecols=key, nrows=self.N)
                     
