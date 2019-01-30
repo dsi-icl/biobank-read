@@ -10,6 +10,7 @@ import pandas as pd
 import numpy as np
 import warnings
 import re
+import os
 import sys
 
 
@@ -30,6 +31,8 @@ import sys
                     inner = all extracted variables valid for each eid
                     outer = values for all eids returned
                     partial = at least one extracted variable must be valid
+        --experimental True\False   (False) 
+                    use new faster multi-variable extraction function
 '''
 
 # Function to deal nicely with Boolean parser options
@@ -77,6 +80,9 @@ options.add_argument("--combine", metavar="inner/partial/outer", type=str, defau
 sums = parser.add_argument_group(title="Optional request for basic summary", description="Perform mean /cov/ corr/ dist plots for the data")
 sums.add_argument("--aver_visits",default=False,type=str2boolorlist,help="get average measurement per visit")
 sums.add_argument("--cov_corr",default=False,type=str2bool,help="Produce extra file of cov/corr between variables. Will have same location and similar name to main output file")
+
+
+options.add_argument("--experimental", type=str2bool, default=False, nargs='+',action='store',help="Use experimental functions which may be more efficient ... at your own risk!")
 
 ########################################################
 
@@ -194,10 +200,12 @@ def outliers(UKBr, Df, args):
 
 def filter_vars(df,args):
     df_sub=pd.DataFrame(columns={'Vars','conds'})
+        
     for cond in args.filter:
         #\S{1, 2} = 1-2 non-whitespace characters
         print(cond)
         match=re.search('([a-zA-Z0-9\s]+)(\S{1,2}\d+)',cond)
+        match=re.search(r'([^=<>]*)([<=>][=]?[0-9]+(.[0-9]+)?)',cond)
         thevar=match.group(1)
         condition=match.group(2)
         # This adds rows under specified column headings
@@ -206,6 +214,7 @@ def filter_vars(df,args):
         #    1    BMI     <99
         # etc
         df_sub=df_sub.append({'Vars':thevar,'conds':condition},ignore_index=True)
+    print df_sub    
     # sanity check - make sure condition vars match extracted vars
     overlap=list(set(df_sub['Vars'])&set(args.vars))
     if len(overlap)==0:
@@ -213,12 +222,21 @@ def filter_vars(df,args):
     # Select condition rows where variables have been extracted
     df_sub=df_sub[[x in overlap for x in df_sub['Vars']]]
     # Apply filter
-    for i in range(len(df_sub)):
+    
+    rowslist = list(df_sub.index)
+    for i in rowslist:
+        # Get cases for this variable
         Ys = [x for x in df.columns.tolist() if df_sub['Vars'].loc[i] in x]
         if len(Ys)==0:
             Ys = whitespace_search(df_sub['Vars'].loc[i],df.columns.tolist())
+        # Apply condition
         for y in Ys:
-            df = df[eval('(df["'+str(y)+'"]'+df_sub["conds"].loc[i]+') | (df["'+str(y)+'"].isna())')] # avoids dropping Na systematically
+            evalstring = '(df["'+str(y)+'"]'+df_sub['conds'].loc[i]+') | (df["'+str(y)+'"].isnull())'
+            print evalstring
+            df = df[eval(evalstring)] # avoids dropping Na systematically
+        
+
+
     return df
 
 
@@ -296,12 +314,11 @@ def extract_the_things(UKBr, args):
 #        print('Baseline visit data only')
     # Does keyword translation and returns actual variable names
     stuff=actual_vars(UKBr, args.vars)
-    Df = UKBr.extract_many_vars(stuff,baseline_only=False, combine=args.combine)
-    args.visit=str(args.visit)
-    if args.visit in ['0','1','2']:
-        tmp=UKBr.vars_by_visits(col_names=Df.columns.tolist(), visit=int(args.visit))
-        tmp=['eid']+tmp
-        Df=Df[tmp]
+    if args.experimental:
+        print('Using EXPERIMENTAL variable extraction - please check results')
+        Df = UKBr.extract_variables_to_df(stuff, combine=args.combine, visit=args.visit)
+    else:
+        Df = UKBr.extract_many_vars(stuff, combine=args.combine, visit=args.visit)
     if args.remove_outliers:
         print('Remove outliers for cont variables')
         Df = outliers(UKBr, Df,args)
@@ -374,22 +391,19 @@ if __name__ == '__main__':
     namehtml=args.html
     namecsv=args.csv
     nameexcl = args.excl
-
+    args.visit=str(args.visit)
 
     ### import Biobankread package
-    sys.path.append('BiobankRead-Bash')
+    updatepath = os.path.join(os.path.dirname(os.path.abspath('__file__')), '..')
+    sys.path.append(updatepath)
     # Note some issues with case of directory names on different systems
     try:
-        import biobankRead2.BiobankRead2 as UKBr2
+        import BiobankRead2.BiobankRead2 as UKBr2
         UKBr = UKBr2.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
         print("BBr loaded successfully")
     except:
-        try:
-            import BiobankRead2.BiobankRead2 as UKBr2
-            UKBr = UKBr2.BiobankRead(html_file = namehtml, csv_file = namecsv, csv_exclude = nameexcl)
-            print("BBr loaded successfully")
-        except:
-            raise ImportError('UKBr could not be loaded properly')
+        raise ImportError('UKBr could not be loaded properly')
+
     Df=extract_the_things(UKBr, args)
     Df=float_to_cat(UKBr, Df)
     

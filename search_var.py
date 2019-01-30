@@ -5,6 +5,7 @@ Created on Thu Aug 23 09:55:52 2018
 @author: wcrum
 """
 
+import sys
 import argparse
 import re
 import os
@@ -120,9 +121,14 @@ if __name__ == '__main__':
     match = args.match
     if isinstance(match, list):
         match = match[0]
-    
     match = match.lower()
     
+    if (len(searchlist) == 0) or (match not in ['and', 'or']):
+        print()
+        print('usage: search_var.py  --keywords  word1 ... wordn  --match {and, or}  [-html  path/to/BB.html]') 
+        print
+        sys.exit()
+        
     filedict = getfilenames(html_file=namehtml)
     namehtml = filedict['html']
     

@@ -122,6 +122,13 @@ These files are designed to be called from a command line terminal as follow:
         --dateType <type> \ ### epistart or admidate
         --firstvisit True \ ### Default: True, Mark earliest/latest visit for each subjects
         --baseline True & ### Mark visits before and after baseline assessment 
+
+An additional script provides a convenient way to search for available UKBB variables
+
+	python  search_var.py \
+        --html  <html file> \
+        --keywords  word1 ... wordn
+        --match  and | or 
  
 For ease of use, the --csv, --html, --excl and --tsv filepaths can be put in a text file called UKBBpaths.txt
 in the current directory or in the user home directory. This file is automatically read when any of the scripts are run.

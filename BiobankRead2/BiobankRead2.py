@@ -335,7 +335,7 @@ class BiobankRead():
         #Ds['eid']=[str(e) for e in Ds['eid']]
         return Ds   
 
-    def extract_variable(self, variable=None, baseline_only=False, dropNaN=False):
+    def extract_variable(self, variable=None, dropNaN=False, visit='all'):
         '''
         Extracts a single specified variable  (input)
         Returns data for first visit only if baseline_only == True
@@ -390,16 +390,12 @@ class BiobankRead():
         for link in columns:
             tmp = str(link.contents[0])#.encode('utf-8'))
             key.append(tmp) 
-        everything = pd.read_csv(self.csv_file, usecols=key, nrows=self.N)
-        
-        #na_filter=False)
-        # drop columns of data not collected at baseline 
-        if baseline_only:
-            cols = everything.columns
-            keep = ['0.' in x for x in cols]
-            keep[0] = True # always keep eid column
-            everything = everything[cols[keep]]
             
+        if visit in ['0', '1', '2']:
+            key=['eid']+self.vars_by_visits(col_names=key, visit=int(visit), delim='-')
+           
+        everything = pd.read_csv(self.csv_file, usecols=key, nrows=self.N)
+                    
         if dropNaN:
             #tmp = ~everything.isnull().any(axis=1)
             #everything = everything[tmp]
@@ -407,6 +403,119 @@ class BiobankRead():
 
         return everything
         
+    ### EXPERIMENTAL ###
+    def extract_variables_to_df(self, variableList=None, spaces=False, combine='outer', visit = 'all'):
+        '''
+        EXPERIMENTAL - MAY BE BROKEN - DO NOT USE
+        Extracts a list of variables  (input)
+        Returns data for first visit only if baseline_only == True
+        spaces = drop variable name after first space when labelling columns
+
+        combine='outer' will inclusively merge each variable into the master list
+        combine='inner' will only retain cases where data exists for all variables
+        combine='partial' retains cases where data exists in at least one variable        
+        '''
+        
+        if combine not in ['inner', 'outer', 'partial']:
+            print('combine %s not one of inner, outer or partial' % combine)
+            return None
+        
+        # extract fields 
+        allrows = self.allrows
+        
+        # Encoded anonymised participant ID
+        key = ['eid']
+
+        # Deal with special symbols in variable name
+        symbols = BiobankRead.special_char
+        
+        keydict = {}
+        newvariableList = []
+        for variable in variableList:
+            oldvariable = variable
+            varlist = list(variable)
+            newvar = []
+            for v in varlist:
+                if v in symbols:
+                    newvar.extend(['\\', v])
+                else:
+                    newvar.extend([v])
+            variable = ''.join(newvar)
+            newvariableList.append(variable)
+            print variable
+        
+            # FIND VARIABLES IN MASTER LIST
+            # Find variable embedded like this:
+            # ... <td rowspan="1">Heel ultrasound method<br> ...
+            # Or this:
+            # ... <td rowspan="1">Heel ultrasound method.<br> ...
+            searchvar = '>'+variable+'(.?)<'
+            userrows = [t for t in allrows if re.search(searchvar, str(t))]
+            if not userrows:
+                raise Exception('The input variable %s is not in the files' % variable)
+            if len(userrows) > 1:
+                print('warning - more than one variable row found')
+                print('warning - returning first instance only')
+            userrows_str = str(userrows[0])
+
+            # extract IDs related to variables
+            # extract all variable names
+            match1 = re.search('id=(\d+)',userrows_str)
+            if match1:
+                idx = match1.group(1)
+            else:
+                print('warning - index for', variable, 'not found')
+                return None
+                
+            # FIND MATCHING COLUMNS FOR VARIABLES AND READ IN FROM FILE
+            ## Retrieve all associated columns with variables names 
+            # explicit href search deprecated
+            #for link in self.soup.find_all('a', href=BiobankRead.sub_link+idx):
+            columns =  self.soup.find_all("a", href = re.compile("field.cgi\?id="+idx+"$"))
+            for link in columns:
+                tmp = str(link.contents[0])#.encode('utf-8'))
+                key.append(tmp) 
+            
+            # Dictionary relating numeric to text variable identifiers
+            # Used to rename columns in extracted dataframe
+            [varcode, dummy] = key[-1].rsplit('-', 1)
+            keydict[varcode] = oldvariable
+
+        # Filter for specific visit        
+        if visit in ['0', '1', '2']:
+            key=['eid']+self.vars_by_visits(col_names=key, visit=int(visit), delim='-')
+        everything = pd.read_csv(self.csv_file, usecols=key, nrows=self.N)
+        
+        # Rename columns for variable names rather than numbers
+        everything = self.rename_columns_from_to(everything, keydict)
+
+        # Apply filters
+        if combine != 'outer':
+            filterdict = {'inner' : 'any', 'partial' : 'all'}
+            everything = everything.dropna(axis=0, how=filterdict[combine])
+
+        return everything
+        
+        
+    def rename_columns_from_to(self, df=None,keydict=None, option_str=True):
+        # rename the columns of a data frame with something sensible
+        # keydict relates variable number identifiers to text names
+        col_names = df.columns.tolist()
+        col_new = ['eid']
+        for v in col_names[1:]:
+            [namestr, visitstr] = v.rsplit('-', 1)
+            varstr = keydict[namestr]
+            if option_str:
+                col_new.append(varstr+'_'+visitstr)
+            else:
+                col_new.append(varstr)
+        df_new = pd.DataFrame(columns=col_new)
+        for c in range(len(col_new)):
+            df_new[col_new[c]] = df[col_names[c]]
+        return df_new
+
+    ### END OF EXPERIMENTAL ###
+
     def variable_type(self,var_names):
         """Returns the type of variable for any variable name"""
         allrows = self.soup.findAll('tr')
@@ -516,7 +625,7 @@ class BiobankRead():
 
 
     def extract_many_vars(self, varnames=None,
-                          dropNaN=False,spaces=False,baseline_only=False, combine='outer'):
+                          dropNaN=False,spaces=False, combine='outer', visit='all'):
         '''
         Extract variables for several pre-specified variable names 
         Supply these as keywords=[var1, var2, ...]
@@ -548,13 +657,13 @@ class BiobankRead():
         for var in varnames:
             print(var)
             # Get variable
-            DBP = self.extract_variable(variable=var, baseline_only=baseline_only, dropNaN=dropNaN)
+            DBP = self.extract_variable(variable=var, dropNaN=dropNaN, visit=visit)
 
             # Partition name for column naming
             if spaces:
                 b,k,a = var.partition(' ')
                 var = b
-            DBP = self.rename_columns(DBP, var, baseline_only=baseline_only)
+            DBP = self.rename_columns(DBP, var)
             
             # Get rid of NaNs
             if dropNaN:
@@ -572,6 +681,8 @@ class BiobankRead():
         # if combine == 'inner', all entries must be valid
         if combine == 'partial':
             main_Df = main_Df[main_Df.drop('eid', axis=1).notnull().any(axis=1)]
+        if combine == 'inner':
+            main_Df = main_Df[main_Df.drop('eid', axis=1).notnull().all(axis=1)]
             
         return main_Df
 
@@ -739,7 +850,7 @@ class BiobankRead():
 #        new_df[key] = df[cols[1::]].mean(axis=1)
 #        return new_df
     
-    def vars_by_visits(self, col_names=None, visit=0):
+    def vars_by_visits(self, col_names=None, visit=0, delim='-'):
         '''
         vars_by_visits(col_names=None, visit=0)
         returns variables in col_names associated with specified visit
@@ -766,7 +877,7 @@ class BiobankRead():
             # ? matches zero or one time
             # Matches things like 'something-X.Y or 'something-X_Y'
             # Where X == visit
-            res = re.search('(.*?)-'+str(visit)+'.(\d+)', var)
+            res = re.search('(.*?)'+delim+str(visit)+'.(\d+)', var)
             if not res is None:
                 V1.append(res.group(0))
         return V1
@@ -780,7 +891,7 @@ class BiobankRead():
         for k in range(nvisits):
             V0 = self.vars_by_visits(col_names,k)
             if len(V0) > 0:
-                match1 = re.search('.*?(.)\d.\d',V0[0]) #
+                match1 = re.search('.*?(-)\d.\d',V0[0]) #
                 mychar=match1.group(1)
                 for v in V0:
                     b,k,a = v.partition(mychar)
@@ -792,7 +903,7 @@ class BiobankRead():
         for c in range(len(col_new)):
             df_new[col_new[c]] = df[col_names[c]]
         return df_new
-        
+     
     def find_DataCoding(self, variable=None):
         ### extract fields 
         soup = self.soup
