@@ -99,8 +99,6 @@ def count_codes(UKBr, df, args):
     code_str = 'diag_icd'+code_conv
 #    # e.g. tmp1 = ['C498', 'C499', 'C496', 'C494', 'C495', 'C492', 'C493', 'C490', 'C491']
     codes_list=list(set(df[code_str].tolist()))
-#    # All the patient ids
-#    ids = list(set(df['eid'].tolist()))
 #    # e.g. cols = ['eid', 'C498', 'C499', 'C496', 'C494', 'C495', 'C492', 'C493', 'C490', 'C491']
 #    cols = ['eid']+codes_list
 #    df_new=pd.DataFrame(columns=cols)
@@ -136,6 +134,8 @@ def count_codes(UKBr, df, args):
         df_new[d]=df_new[cols].fillna(value=0).sum(axis=1)
         df_new[d]=[1*(V>0) for V in df_new[d]]
     df_new=df_new[['eid']+codes_list]
+    #    # All the patient ids
+    ids = list(set(df_new['eid'].tolist()))
     j=0
     for i in ids:
         # Get the current id
