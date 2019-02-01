@@ -442,7 +442,7 @@ class BiobankRead():
                     newvar.extend([v])
             variable = ''.join(newvar)
             newvariableList.append(variable)
-            print variable
+            #print variable
         
             # FIND VARIABLES IN MASTER LIST
             # Find variable embedded like this:
@@ -1210,7 +1210,7 @@ class BiobankRead():
         DF = pd.DataFrame(columns=['eid','After','first_date_aft'])
         for ee in eids:
             tmp = df[df['eid']==ee].copy()
-            tmp_ass_date = assess_dates[assess_dates['eid']==ee]['assess_date'].iloc[0]
+            tmp_ass_date = assess_dates[assess_dates['eid']==ee]['assess_date']#.iloc[0]
             tmp2= tmp[tmp[date]>tmp_ass_date]
             if len(tmp2)>0:
                 oo = 1

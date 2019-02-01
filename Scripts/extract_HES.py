@@ -9,6 +9,7 @@ import sys
 import argparse
 import pandas as pd
 import re
+import numpy as np
 
 '''Example run:
     python HES_extract.py 
@@ -43,8 +44,8 @@ options.add_argument("--excl", metavar="{File5}", type=str, default=None, help='
 
 ###################
 def getcodes(UKBr, args):
-    if UKBr.is_doc(args.codes[0]):
-        Codes=UKBr.read_basic_doc(args.codes[0])
+    if UKBr.is_doc(args.codes):
+        Codes=UKBr.read_basic_doc(args.codes)
     else:
         Codes = args.codes
     return Codes
@@ -70,15 +71,13 @@ def extract_disease_codes(UKBr, Df, args):
         print('Marking 1st ever and latest visits')
         date = args.dateType
         df_1st = UKBr.HES_first_last_time(df,date)
+        df_1st['eid']=df_1st['eid'].astype('float64')
         df_new = pd.merge(df_new,df_1st,on=['eid'],how='outer')
     if args.baseline:
         print('Marking visits before & after baseline assessment')
         df_ass=UKBr.Get_ass_dates()
         df_ass=df_ass[df_ass.columns[0:2]]
         df_ass.rename(columns={df_ass.columns[1]: 'assess_date'},inplace=True)
-        # After
-        df2=UKBr.HES_after_assess(df=df,assess_dates=df_ass,date=date)
-        df2=obj_to_int(df2)
         df_sub=UKBr.HES_first_last_time(df,date)
         # fix data type compability issues
         df_sub=obj_to_int(df_sub)
@@ -86,8 +85,10 @@ def extract_disease_codes(UKBr, Df, args):
         # Before (just a binary flag)
         df3=UKBr.HES_before_assess(df_sub)
         df_new=obj_to_int(df_new)
-        df_new = pd.merge(df_new,df2,on=['eid'],how='outer')
         df_new = pd.merge(df_new,df3,on=['eid'],how='outer')
+        # After
+        df_new['After']=np.where(df_new['Before']==1,0,1)
+        df_new['After_date']=np.where(df_new['After']==1,df_new['first_admidate'],np.nan)
     return df_new
 
 def count_codes(UKBr, df, args):
@@ -102,70 +103,35 @@ def count_codes(UKBr, df, args):
 #    # e.g. tmp1 = ['C498', 'C499', 'C496', 'C494', 'C495', 'C492', 'C493', 'C490', 'C491']
     codes_list=list(set(df[code_str].tolist()))
 #    # e.g. cols = ['eid', 'C498', 'C499', 'C496', 'C494', 'C495', 'C492', 'C493', 'C490', 'C491']
-#    cols = ['eid']+codes_list
-#    df_new=pd.DataFrame(columns=cols)
-#    j=0
-#    for i in ids:
-#        # Get the current id
-#        df_sub=df[df['eid']==i]
-#        # ICD10 codes belonging to this subject
-#        codes_this=list(set(df_sub[code_str].tolist()))
-#        # Codes which match the search list
-#        res = [i]+[int(x in codes_this) for x in codes_list]
-#        # Insert in data-frame
-#        df_new.loc[j]=res
-#        j += 1
-    ########
-    #ids = list(set(df['eid'].tolist()))
     cols = ['eid']+codes_list
     df_new=pd.DataFrame(columns=cols)
-    for c in df.columns[1::]:
-        new_ymp=pd.DataFrame(columns=['eid'])
-        for d in codes_list:
-            ymp=df[[str(d) in str(x) for x in df[c]]]
-            if(len(ymp)>0):
-                ymp_sub=pd.DataFrame()
-                ymp_sub['eid']=ymp['eid'].tolist()
-                ymp_sub[d]=1
-                new_ymp=pd.merge(new_ymp,ymp_sub,on='eid',how='outer')
-        if(len(new_ymp)>0):
-            df_new=pd.merge(df_new,new_ymp,on='eid',how='outer')
-        #df_new=pd.concat([df_new,new_ymp],ignore_index=False,sort=True)
+    new_ymp=pd.DataFrame(columns=['eid'])
     for d in codes_list:
-        cols = [c for c in df_new.columns if str(d) in str(c)]
-        df_new[d]=df_new[cols].fillna(value=0).sum(axis=1)
-        df_new[d]=[1*(V>0) for V in df_new[d]]
-    df_new=df_new[['eid']+codes_list]
-    #    # All the patient ids
-    ids = list(set(df_new['eid'].tolist()))
-    j=0
-    for i in ids:
-        # Get the current id
-        df_sub=df[df['eid']==i].copy()
-        # ICD10 codes belonging to this subject
-        codes_this=list(set(df_sub[code_str].tolist()))
-        # Codes which match the search list
-        res = [i]+[int(x in codes_this) for x in codes_list]
-        # Insert in data-frame
-        df_new.loc[j]=res
-        j += 1
+        ymp=df[[str(d) in str(x) for x in df[code_str]]]
+        if(len(ymp)>0):
+            ymp_sub=pd.DataFrame()
+            ymp_sub['eid']=ymp['eid'].unique().tolist()
+            ymp_sub[d]=1
+            new_ymp=pd.merge(new_ymp,ymp_sub,on='eid',how='outer')
+    df_new=new_ymp.fillna(value=0)
     return df_new
 
 ###################
-#class Object(object):
-#   pass
-#args = Object()
-## args.out='/media/storage/codes/BiobankRead-Bash'
-#args.html=r'/media/storage/UkBiobank/Application_236/R4528/ukb4528.html'
-#args.csv=r'/media/storage/UkBiobank/Application_236/R4528/ukb4528.csv'
-#args.tsv=r'/media/storage/UkBiobank/HESdata/ukb_HES_236.tsv'
-#args.codes=['I110','I132','I500','I501','I509']
-#args.codeType='ICD10'
-#args.dateType='epistart'
-#args.firstvisit=True
-#args.baseline=True
-#args.excl=None
-##
+class Object(object):
+   pass
+args = Object()
+# args.out='/media/storage/codes/BiobankRead-Bash'
+args.html=r'/media/storage/UkBiobank/Application_10035/21204/ukb21204.html'
+args.csv=r'/media/storage/UkBiobank/Application_10035/21204/ukb21204.csv'
+args.tsv=r'/media/storage/UkBiobank/Application_10035/HES/ukb_10035_jan19.tsv'
+args.codes=r'/media/storage/UkBiobank/Application_10035/HES/CVD_icd10codes.txt'
+#['I110','I132','I500','I501','I509']
+args.codeType='ICD10'
+args.dateType='epistart'
+args.firstvisit=True
+args.baseline=True
+args.excl=None
+#
 ###################
 
 if __name__ == '__main__':
