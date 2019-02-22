@@ -214,7 +214,7 @@ def filter_vars(df,args):
         #    1    BMI     <99
         # etc
         df_sub=df_sub.append({'Vars':thevar,'conds':condition},ignore_index=True)
-    print df_sub    
+    #print df_sub    
     # sanity check - make sure condition vars match extracted vars
     overlap=list(set(df_sub['Vars'])&set(args.vars))
     if len(overlap)==0:
@@ -232,7 +232,7 @@ def filter_vars(df,args):
         # Apply condition
         for y in Ys:
             evalstring = '(df["'+str(y)+'"]'+df_sub['conds'].loc[i]+') | (df["'+str(y)+'"].isnull())'
-            print evalstring
+            #print evalstring
             df = df[eval(evalstring)] # avoids dropping Na systematically
         
 
@@ -318,7 +318,7 @@ def extract_the_things(UKBr, args):
         print('Using EXPERIMENTAL variable extraction - please check results')
         Df = UKBr.extract_variables_to_df(stuff, combine=args.combine, visit=args.visit)
     else:
-        Df = UKBr.extract_many_vars(stuff, combine=args.combine, visit=args.visit)
+        Df = UKBr.extract_many_vars(stuff, combine=args.combine)#, visit=args.visit)
     if args.remove_outliers:
         print('Remove outliers for cont variables')
         Df = outliers(UKBr, Df,args)
@@ -368,20 +368,20 @@ def produce_plots(df,args):
     return 
 
 ##### for testing on desktop ONLY!! #####
-class Object(object):
-    pass
-args = Object()
-args.out='test1'
-args.vars=['Sex','Age assessment','BMI']#['Pulse rate']#
-args.visit=0#'all'
-args.aver_visits=False
-args.remove_outliers=True#False#
-args.filter=False#['Age assessment<70','Age assessment>=40','BMI>=25']#
-args.html='/media/storage/UkBiobank/Application_10035/21204/ukb21204.html'
-args.csv='/media/storage/UkBiobank/Application_10035/21204/ukb21204.csv'
-args.cov_corr=False
-args.excl=None
-args.combine='outer'
+#class Object(object):
+#    pass
+#args = Object()
+#args.out='test1'
+#args.vars=['Sex','Age assessment','BMI']#['Pulse rate']#
+#args.visit=0#'all'
+#args.aver_visits=False
+#args.remove_outliers=True#False#
+#args.filter=False#['Age assessment<70','Age assessment>=40','BMI>=25']#
+#args.html='/media/storage/UkBiobank/Application_10035/21204/ukb21204.html'
+#args.csv='/media/storage/UkBiobank/Application_10035/21204/ukb21204.csv'
+#args.cov_corr=False
+#args.excl=None
+#args.combine='outer'
 ###
 ###
 
@@ -395,7 +395,8 @@ if __name__ == '__main__':
 
     ### import Biobankread package
     updatepath = os.path.join(os.path.dirname(os.path.abspath('__file__')), '..')
-    sys.path.append(updatepath)
+    print(updatepath)
+    #sys.path.append(updatepath)
     # Note some issues with case of directory names on different systems
     try:
         import BiobankRead2.BiobankRead2 as UKBr2

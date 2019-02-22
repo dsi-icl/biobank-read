@@ -225,7 +225,7 @@ class BiobankRead():
             if Nold > self.N:
                 print(' ', self.N, 'EIDS remain')
 
-        print('Done');
+        print('Done ---');
 
         # All attendance dates
         # QUERY - WHERE IS N SET?
@@ -625,7 +625,7 @@ class BiobankRead():
 
 
     def extract_many_vars(self, varnames=None,
-                          dropNaN=False,spaces=False, combine='outer', visit='all'):
+            dropNaN=False, spaces=False, combine='outer', visit='all'):
         '''
         Extract variables for several pre-specified variable names 
         Supply these as keywords=[var1, var2, ...]

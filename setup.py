@@ -40,13 +40,13 @@ if (major < 3) or (major==3 and minor1<6):
 ######
 
 setup(name='BiobankRead2',
-      version='3.0',
+      version='3.1.1',
       description='Python scripts for UKB data',
       author='Deborah Schneider-Luftman',
       author_email='ds711@ic.ac.uk',
       license ='GNU GPL v3',
       packages=['BiobankRead2'],
-      #package_dir={'': 'Biobankread2'},
+      package_dir={'': 'Biobankread2'},
       install_requires=[
 	"bs4", "numpy", "pandas", "urllib3", "regex", "seaborn"
 	],

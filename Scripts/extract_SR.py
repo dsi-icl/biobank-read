@@ -49,17 +49,18 @@ options.add_argument("--excl", metavar="{File5}", type=str, default=None, help='
 def num_codes(UKBr, args):
     if UKBr.is_doc(args.disease):
         args.disease=UKBr.read_basic_doc(args.disease)
-    if type(args.disease) is str:
-        tmp=UKBr.find_SR_codes(select=args.disease,cancer=args.SRcancer)
-    elif type(args.disease) is list:
-        tmp = []
-        for x in args.disease:
-            if type(x) is str:
-                Y = UKBr.find_SR_codes(select=x,cancer=args.SRcancer)
-                tmp = tmp+Y
-            else:
-                Y = x
-                tmp = tmp.append(Y)
+    tmp=list(args.disease)
+   # if type(args.disease) is str:
+   #     tmp=UKBr.find_SR_codes(select=args.disease,cancer=args.SRcancer)
+   # elif type(args.disease) is list:
+   #     tmp = []
+   #     for x in args.disease:
+   #         if type(x) is str:
+   #             Y = UKBr.find_SR_codes(select=x,cancer=args.SRcancer)
+   #             tmp = tmp+Y
+   #         else:
+   #             Y = x
+   #             tmp = tmp.append(Y)
     codes = [float(x) for x in tmp]
     return codes
 
@@ -91,9 +92,9 @@ def extract_SR_stuff(UKBr, args):
     print('Df extracted')
     args.visit=str(args.visit)
     if args.visit in ['0','1','2']:
-        tmp=UKBr.vars_by_visits(col_names=SR_Df.columns.tolist(), visit=int(args.visit))
+        tmp=UKBr.vars_by_visits(col_names=SR_df.columns.tolist(), visit=int(args.visit))
         tmp=['eid']+tmp
-        SR_Df=SR_Df[tmp]
+        SR_df=SR_df[tmp]
     SR_df.dropna(axis=0,how='all',subset=SR_df.columns[1::],inplace=True)
     print(len(SR_df))
     SR_df=count_codes(UKBr, SR_df,args)
@@ -106,31 +107,30 @@ def count_codes(UKBr, df,args):
     print(args.disease)
     print('codes found')
     print(tmp1)
-    df_new=pd.DataFrame(columns=['eid']+tmp1)
-    for c in df.columns[1::]:
+    df_new=pd.DataFrame(columns=['eid'])
+    for d in tmp1:
         new_ymp=pd.DataFrame(columns=['eid'])
-        for d in tmp1:
+        for c in df.columns[1::]:
             ymp=df[df[c]==d]
             if(len(ymp)>0):
                 ymp_sub=pd.DataFrame()
                 ymp_sub['eid']=ymp['eid'].tolist()
-                ymp_sub[d]=1
+                ymp_sub[str(d)+str(c)]=1
                 new_ymp=pd.merge(new_ymp,ymp_sub,on='eid',how='outer')
-            if(len(new_ymp)>0):
-                df_new=pd.merge(df_new,new_ymp,on='eid',how='outer')
-        #df_new=pd.concat([df_new,new_ymp],ignore_index=False,sort=True)
-    for d in tmp1:
-        cols = [c for c in df_new.columns if str(d) in str(c)]
-        df_new[d]=df_new[cols].fillna(value=0).sum(axis=1)
-        df_new[d]=[1*(V>0) for V in df_new[d]]
+        cols=new_ymp.columns.tolist()
+        new_ymp[d]=new_ymp[cols].fillna(value=0).sum(axis=1)
+        new_ymp[d]=[1*(V>0) for V in new_ymp[d]]
+        if(len(new_ymp)>0):
+            df_new=pd.merge(df_new,new_ymp[['eid',d]],on='eid',how='outer')
+    del new_ymp, ymp_sub, ymp
+    print(df_new.columns)
+   # for d in tmp1:
+   #     print(d)
+   #     cols = [c for c in df_new.columns if str(d) in str(c)]
+   #     print(cols)
+   #     df_new[d]=df_new[cols].fillna(value=0).sum(axis=1)
+   #     df_new[d]=[1*(V>0) for V in df_new[d]]
     df_new=df_new[['eid']+tmp1]
-   #for i in ids:
-   #     df_sub=df[df['eid']==i]
-   #     tmp2=list(df_sub.iloc[0][1:len(df_sub.columns)-1])
-   #     #tmp2=[x for x in tmp2 if str(x) != 'nan']
-   #     res = [i]+[int(x in tmp2) for x in tmp1]
-   #     df_new.loc[j]=res
-   #     j += 1
     return df_new
 
 #def clean_up(df):
