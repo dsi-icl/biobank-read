@@ -887,7 +887,7 @@ class BiobankRead():
         # rename the columns of a data frame with something sensible
         col_names = df.columns.tolist()
         col_new = ['eid']
-        nvisits = 1 if baseline_only else 3
+        nvisits = 1 if baseline_only else 4
         for k in range(nvisits):
             V0 = self.vars_by_visits(col_names,k)
             if len(V0) > 0:
